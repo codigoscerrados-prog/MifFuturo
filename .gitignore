@@ -5,16 +5,16 @@ out/
 dist/
 *.log
 
-# Env
+# Env / Secrets
 .env
 .env.*
 !.env.example
 
-# Python
+# Python (backend)
 backend/.venv/
 backend/__pycache__/
-*.pyc
 __pycache__/
+*.pyc
 
 # Editor/OS
 .vscode/
