@@ -111,6 +111,10 @@ class Complejo(Base):
         passive_deletes=True,
     )
 
+    @property
+    def owner_phone(self):
+        return self.owner.phone if self.owner else None
+
 
 # =========================
 # Canchas

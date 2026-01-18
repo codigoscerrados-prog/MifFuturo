@@ -1,4 +1,5 @@
 .seccion {
+    animation: fadeUp 0.5s ease both;
   padding: 0;
 }
 
@@ -16,6 +17,7 @@
   font-size: 24px;
   letter-spacing: -.2px;
   font-weight: 900;
+  color: var(--azulMarino);
 }
 
 .grid {
@@ -26,24 +28,30 @@
 
 .card {
   border: 1px solid var(--borde);
-  background: var(--blanco);
+  background: linear-gradient(180deg, var(--blanco), var(--superficie2));
   border-radius: var(--radio-xl);
   box-shadow: var(--sombra-sm);
   padding: 16px;
-  transition: transform .12s ease, box-shadow .12s ease;
+  transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--sombra);
+  box-shadow: var(--sombra-md);
+  border-color: var(--bordeHover);
+}
+
+.card:focus-within {
+  border-color: rgba(37, 99, 235, .25);
+  box-shadow: var(--sombra-md);
 }
 
 .etiqueta {
   display: inline-flex;
   padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(37, 99, 235, .18);
-  background: rgba(37, 99, 235, .08);
+  border: 1px solid rgba(37, 99, 235, .22);
+  background: rgba(37, 99, 235, .10);
   color: var(--azulMarino);
   font-weight: 900;
   font-size: 12px;
@@ -53,6 +61,7 @@
 .nombre {
   margin: 0 0 8px;
   font-weight: 900;
+  color: var(--azulMarino);
 }
 
 .meta {

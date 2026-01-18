@@ -17,7 +17,9 @@ function normalizePrefix(prefix: string) {
  */
 export function apiUrl(path: string) {
     const origin = normalizeOrigin(process.env.NEXT_PUBLIC_API_ORIGIN || "");
-    const prefix = normalizePrefix(process.env.NEXT_PUBLIC_API_PREFIX || "/api");
+    const envPrefix = process.env.NEXT_PUBLIC_API_PREFIX;
+    const defaultPrefix = origin ? "" : "/api";
+    const prefix = normalizePrefix(envPrefix !== undefined ? envPrefix : defaultPrefix);
 
     if (!path.startsWith("/")) path = `/${path}`;
     const finalPath = `${prefix}${path}`;

@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     FROM_EMAIL: str = ""
     SMTP_USE_TLS: bool = True
 
+    # ---- OAuth (Google) ----
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = ""
+    FRONTEND_ORIGIN: str = "http://localhost:3000"
+
     # ✅ No crashea si aparecen variables extra en .env (por ejemplo NEXT_PUBLIC_*)
     model_config = SettingsConfigDict(
         env_file=(".env", ".env.local"),

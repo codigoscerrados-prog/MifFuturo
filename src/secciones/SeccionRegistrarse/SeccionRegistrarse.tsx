@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./SeccionRegistrarse.module.css";
 import Link from "next/link";
@@ -23,10 +23,26 @@ function isValidEmail(v: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
-export default function SeccionRegistrarse() {
+type SeccionRegistrarseProps = {
+    defaultRole?: "usuario" | "propietario";
+    mostrarRoles?: boolean;
+    titulo?: string;
+    subtitulo?: string;
+    badge?: string;
+    compact?: boolean;
+};
+
+export default function SeccionRegistrarse({
+    defaultRole,
+    mostrarRoles,
+    titulo,
+    subtitulo,
+    badge,
+    compact,
+}: SeccionRegistrarseProps) {
     const router = useRouter();
 
-    const [role, setRole] = useState<"usuario" | "propietario">("usuario");
+    const [role, setRole] = useState<"usuario" | "propietario">(defaultRole || "usuario");
     const [first_name, setFirst] = useState("");
     const [last_name, setLast] = useState("");
     const [email, setEmail] = useState("");
@@ -37,6 +53,10 @@ export default function SeccionRegistrarse() {
 
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (defaultRole) setRole(defaultRole);
+    }, [defaultRole]);
 
     const puede = useMemo(() => {
         if (!first_name.trim() || !last_name.trim()) return false;
@@ -101,15 +121,40 @@ export default function SeccionRegistrarse() {
         }
     }
 
+    const mostrarSelector = mostrarRoles ?? !defaultRole;
+    const headerBadge = badge || "Registro rápido • Roles • Preparado para PRO";
+    const headerTitulo = titulo || "Crear cuenta";
+    const headerSubtitulo =
+        subtitulo ||
+        (mostrarSelector
+            ? "Crea tu cuenta como usuario o propietario. Luego te redirigimos al panel correcto."
+            : role === "propietario"
+            ? "Registra tu complejo y empieza a recibir reservas desde tu panel."
+            : "Crea tu cuenta para reservar canchas en minutos.");
+
+    function oauthUrl(path: string) {
+        const origin = (process.env.NEXT_PUBLIC_API_ORIGIN || "").replace(/\/$/, "");
+        if (origin) return `${origin}${path}`;
+        try {
+            const u = new URL(apiUrl("/"));
+            u.pathname = u.pathname.replace(/\/api\/?$/, "");
+            u.search = "";
+            u.hash = "";
+            return `${u.toString().replace(/\/$/, "")}${path}`;
+        } catch {
+            return path;
+        }
+    }
+
+    const seccionClass = compact ? `${styles.seccion} ${styles.compact}` : styles.seccion;
+
     return (
-        <section className={styles.seccion}>
+        <section className={seccionClass}>
             <div className={`contenedor ${styles.grid}`}>
                 <header className={styles.cabecera}>
-                    <p className={styles.badge}>Registro rápido • Roles • Preparado para PRO</p>
-                    <h1 className={styles.titulo}>Crear cuenta</h1>
-                    <p className={styles.subtitulo}>
-                        Crea tu cuenta como <strong>usuario</strong> o <strong>propietario</strong>. Luego te redirigimos al panel correcto.
-                    </p>
+                    <p className={styles.badge}>{headerBadge}</p>
+                    <h1 className={styles.titulo}>{headerTitulo}</h1>
+                    <p className={styles.subtitulo}>{headerSubtitulo}</p>
 
                     <div className={styles.linksTop}>
                         <span className={styles.muted}>¿Ya tienes cuenta?</span>
@@ -121,24 +166,59 @@ export default function SeccionRegistrarse() {
                     <form onSubmit={enviar} className={styles.form}>
                         {error && <div className={styles.error}>{error}</div>}
 
-                        <div className={styles.roles}>
+                        <div className={styles.oauthStack}>
                             <button
                                 type="button"
-                                className={`${styles.rolBtn} ${role === "usuario" ? styles.rolOn : ""}`}
-                                onClick={() => setRole("usuario")}
-                                aria-pressed={role === "usuario"}
+                                className={`boton botonPrimario ${styles.btnGoogle}`}
+                                onClick={() => (window.location.href = oauthUrl("/auth/google/login"))}
                             >
-                                Usuario
+                                <span className={styles.googleIcon} aria-hidden="true">
+                                    <svg viewBox="0 0 48 48" role="presentation" focusable="false">
+                                        <path
+                                            fill="#EA4335"
+                                            d="M24 9.5c3.54 0 6.64 1.22 9.11 3.6l6.8-6.8C35.87 2.5 30.31 0 24 0 14.62 0 6.51 5.38 2.55 13.22l7.9 6.13C12.24 13.02 17.67 9.5 24 9.5z"
+                                        />
+                                        <path
+                                            fill="#34A853"
+                                            d="M46.5 24.5c0-1.6-.15-3.14-.43-4.63H24v9.26h12.6c-.54 2.94-2.22 5.42-4.72 7.08l7.26 5.63C43.45 37.94 46.5 31.76 46.5 24.5z"
+                                        />
+                                        <path
+                                            fill="#4A90E2"
+                                            d="M10.45 28.65a14.9 14.9 0 0 1 0-9.3l-7.9-6.13A24 24 0 0 0 0 24c0 3.87.93 7.52 2.55 10.78l7.9-6.13z"
+                                        />
+                                        <path
+                                            fill="#FBBC05"
+                                            d="M24 48c6.31 0 11.61-2.08 15.48-5.66l-7.26-5.63c-2.02 1.36-4.6 2.17-8.22 2.17-6.33 0-11.76-3.52-13.55-8.35l-7.9 6.13C6.51 42.62 14.62 48 24 48z"
+                                        />
+                                    </svg>
+                                </span>
+                                Continuar con Google
                             </button>
-                            <button
-                                type="button"
-                                className={`${styles.rolBtn} ${role === "propietario" ? styles.rolOn : ""}`}
-                                onClick={() => setRole("propietario")}
-                                aria-pressed={role === "propietario"}
-                            >
-                                Propietario
-                            </button>
+                            <div className={styles.divider}>
+                                <span>o registra con correo</span>
+                            </div>
                         </div>
+
+                        {mostrarSelector && (
+                            <div className={styles.roles}>
+                                <button
+                                    type="button"
+                                    className={`${styles.rolBtn} ${role === "usuario" ? styles.rolOn : ""}`}
+                                    onClick={() => setRole("usuario")}
+                                    aria-pressed={role === "usuario"}
+                                >
+                                    Usuario
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.rolBtn} ${role === "propietario" ? styles.rolOn : ""}`}
+                                    onClick={() => setRole("propietario")}
+                                    aria-pressed={role === "propietario"}
+                                >
+                                    Propietario
+                                </button>
+                            </div>
+                        )}
 
                         <div className={styles.filas}>
                             <label className={styles.campo}>

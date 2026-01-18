@@ -61,6 +61,13 @@ type DistOpt = {
   department_id: string | null;
 };
 
+type PlanActualOut = {
+  plan_id: number;
+  plan_codigo?: string | null;
+  plan_nombre?: string | null;
+  estado?: string | null;
+};
+
 const LS_COMPLEJO_ID = "panel_complejo_id";
 
 /** ✅ Lee el complejo seleccionado desde LocalStorage para persistir selección */
@@ -81,6 +88,24 @@ function setStoredComplejoId(id: string) {
   } catch {
     // ignore
   }
+}
+
+function clearStoredComplejoId() {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(LS_COMPLEJO_ID);
+  } catch {
+    // ignore
+  }
+}
+
+function resolveLimiteComplejos(plan: PlanActualOut | null) {
+  const codigo = (plan?.plan_codigo || "").toLowerCase();
+  const nombre = (plan?.plan_nombre || "").toLowerCase();
+  if (codigo.includes("pro") || codigo.includes("premium") || nombre.includes("pro") || nombre.includes("premium")) {
+    return 2;
+  }
+  return 1;
 }
 
 /** ✅ Detecta base del API para armar URLs públicas de imágenes */
@@ -158,6 +183,10 @@ export default function SeccionComplejos({ token }: { token: string }) {
   const [seleccionadoId, setSeleccionadoId] = useState<string>(
     () => getStoredComplejoId() || ""
   );
+  const [planActual, setPlanActual] = useState<PlanActualOut | null>(null);
+
+  const limiteComplejos = useMemo(() => resolveLimiteComplejos(planActual), [planActual]);
+  const puedeCrear = complejos.length < limiteComplejos;
 
   // ✅ form + foto
   const [form, setForm] = useState({ ...emptyForm });
@@ -221,6 +250,15 @@ export default function SeccionComplejos({ token }: { token: string }) {
     setDistritos(Array.isArray(data) ? data : []);
   }
 
+  async function fetchPlan() {
+    try {
+      const data = await apiFetch<PlanActualOut>("/perfil/plan", { token });
+      setPlanActual(data || null);
+    } catch {
+      setPlanActual(null);
+    }
+  }
+
   // =========================================================
   // ✅ PANEL: Fetch de complejos
   // =========================================================
@@ -236,17 +274,21 @@ export default function SeccionComplejos({ token }: { token: string }) {
     const isValidId = (id?: string | null) =>
       !!id && arr.some((c) => String(c.id) === String(id));
 
+    const puedeCrearLocal = arr.length < limiteComplejos;
     let nextId = "";
     if (arr.length) {
       if (isValidId(seleccionadoId)) nextId = String(seleccionadoId);
       else if (isValidId(stored)) nextId = String(stored);
       else nextId = String(arr[0].id);
+    } else if (puedeCrearLocal) {
+      nextId = "new";
     }
 
-    if (nextId && nextId !== String(seleccionadoId)) {
+    if (nextId !== String(seleccionadoId)) {
       setSeleccionadoId(nextId);
     }
-    if (nextId) setStoredComplejoId(nextId);
+    if (nextId === "new") clearStoredComplejoId();
+    else setStoredComplejoId(nextId);
   }
 
   /** ✅ carga inicial: complejos + departamentos (en paralelo) */
@@ -255,7 +297,7 @@ export default function SeccionComplejos({ token }: { token: string }) {
       try {
         setError(null);
         setCargando(true);
-        await Promise.all([fetchAll(), fetchDepartamentos()]);
+        await Promise.all([fetchAll(), fetchDepartamentos(), fetchPlan()]);
       } catch (e: any) {
         setError(e?.message || "No se pudo cargar complejos.");
       } finally {
@@ -264,6 +306,25 @@ export default function SeccionComplejos({ token }: { token: string }) {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (cargando) return;
+    const idValido = !!seleccionadoId && seleccionadoId !== "new" && complejos.some((c) => String(c.id) === String(seleccionadoId));
+    if (seleccionadoId === "new" && !puedeCrear) {
+      const fallback = complejos[0] ? String(complejos[0].id) : "";
+      setSeleccionadoId(fallback);
+      if (fallback) setStoredComplejoId(fallback);
+      else clearStoredComplejoId();
+      return;
+    }
+    if (!idValido && seleccionadoId !== "new") {
+      const fallback = complejos[0] ? String(complejos[0].id) : puedeCrear ? "new" : "";
+      setSeleccionadoId(fallback);
+      if (fallback === "new") clearStoredComplejoId();
+      else if (fallback) setStoredComplejoId(fallback);
+      else clearStoredComplejoId();
+    }
+  }, [cargando, complejos, seleccionadoId, puedeCrear]);
 
   // =========================================================
   // ✅ Cuando cambia el complejo seleccionado: poblar form
@@ -429,8 +490,10 @@ export default function SeccionComplejos({ token }: { token: string }) {
       };
 
       let actualizado: Complejo;
+      const idValido = complejos.some((c) => String(c.id) === String(seleccionadoId));
+      const esNuevo = seleccionadoId === "new" || !idValido;
 
-      if (seleccionadoId === "new") {
+      if (esNuevo) {
         actualizado = await apiFetch<Complejo>("/panel/complejos", {
           token,
           method: "POST",
@@ -456,7 +519,7 @@ export default function SeccionComplejos({ token }: { token: string }) {
         });
       }
 
-      setOk(seleccionadoId === "new" ? "Complejo creado ✅" : "Complejo actualizado ✅");
+      setOk(esNuevo ? "Complejo creado ✅" : "Complejo actualizado ✅");
 
       // ✅ refrescar lista
       await fetchAll();
@@ -509,6 +572,7 @@ export default function SeccionComplejos({ token }: { token: string }) {
                 const v = e.target.value;
                 setSeleccionadoId(v);
                 if (v !== "new") setStoredComplejoId(v);
+                else clearStoredComplejoId();
               }}
               disabled={cargando}
             >
@@ -517,7 +581,7 @@ export default function SeccionComplejos({ token }: { token: string }) {
                   #{c.id} • {c.nombre}
                 </option>
               ))}
-              <option value="new">+ Crear nuevo complejo</option>
+              {puedeCrear ? <option value="new">+ Crear nuevo complejo</option> : null}
             </select>
           </div>
         </div>

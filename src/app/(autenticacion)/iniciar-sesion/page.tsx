@@ -2,7 +2,7 @@ import SeccionIniciarSesion from "@/secciones/SeccionIniciarSesion/SeccionInicia
 
 export default function PageIniciarSesion() {
     return (
-        <main className="fondoSeccion fondoA espaciadoSeccion">
+        <main className="fondoSeccion fondoA espaciadoSeccion" style={{ marginTop: "65px" }}>
             <SeccionIniciarSesion />
         </main>
     );

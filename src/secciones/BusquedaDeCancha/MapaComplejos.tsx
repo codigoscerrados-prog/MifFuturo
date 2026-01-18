@@ -13,6 +13,7 @@ const ICON = new L.Icon({
     iconSize: [25, 41],
     iconAnchor: [12, 41],
 });
+const PRECIO_MAX_VISIBLE = 300;
 
 type ComplejoCard = {
     id: number;
@@ -36,6 +37,12 @@ type ComplejoCard = {
     propietarioPhone: string | null;
 };
 
+function numOrNull(v: unknown) {
+    if (typeof v === "number") return Number.isFinite(v) ? v : null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+
 export default function MapaComplejos({
     complejos,
     onDetalles,
@@ -47,48 +54,50 @@ export default function MapaComplejos({
 }) {
     // ✅ solo los complejos con coordenadas válidas
     const puntos = useMemo(() => {
-        return (complejos || []).filter((c) => typeof c.latitud === "number" && typeof c.longitud === "number");
+        return (complejos || []).filter((c) => numOrNull(c.latitud) !== null && numOrNull(c.longitud) !== null);
     }, [complejos]);
 
     // ✅ centro: primer complejo con coords o Lima por defecto
     const center = useMemo<[number, number]>(() => {
         const first = puntos[0];
-        if (first && typeof first.latitud === "number" && typeof first.longitud === "number") {
-            return [first.latitud, first.longitud];
-        }
+        const lat = numOrNull(first?.latitud);
+        const lng = numOrNull(first?.longitud);
+        if (lat != null && lng != null) return [lat, lng];
         return [-12.0464, -77.0428]; // Lima centro
     }, [puntos]);
 
     if (!puntos.length) return null;
 
     return (
-        <div style={{ height: 420, width: "100%", borderRadius: 18, overflow: "hidden", marginBottom: 18 }}>
-            <MapContainer center={center} zoom={12} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+        <div
+            className="rounded-4 overflow-hidden shadow-sm"
+            style={{
+                height: 420,
+                width: "100%",
+                marginBottom: 0,
+                position: "relative",
+                zIndex: 1,
+            }}
+        >
+            <MapContainer
+                center={center}
+                zoom={12}
+                style={{ height: "100%", width: "100%", zIndex: 0 }}
+                scrollWheelZoom={true}
+                zoomControl={true}
+            >
+                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-                {puntos.map((cx) => (
-                    <Marker
-                        key={cx.id}
-                        position={[cx.latitud as number, cx.longitud as number]}
-                        icon={ICON}
-                    >
+                {puntos.map((cx) => {
+                    const lat = numOrNull(cx.latitud);
+                    const lng = numOrNull(cx.longitud);
+                    if (lat == null || lng == null) return null;
+                    return (
+                        <Marker key={cx.id} position={[lat, lng]} icon={ICON}>
                         <Popup>
-                            <div style={{ width: 220 }}>
+                            <div className="d-flex flex-column gap-2" style={{ width: 230 }}>
                                 {/* Foto */}
-                                <div
-                                    style={{
-                                        position: "relative",
-                                        width: "100%",
-                                        height: 110,
-                                        borderRadius: 12,
-                                        overflow: "hidden",
-                                        marginBottom: 10,
-                                        background: "#111",
-                                    }}
-                                >
+                                <div className="rounded-3 overflow-hidden" style={{ width: "100%", height: 110, background: "#111" }}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={cx.foto || "/canchas/sintetico-marconi.avif"}
@@ -101,20 +110,22 @@ export default function MapaComplejos({
                                     />
                                 </div>
 
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <strong style={{ fontSize: 14 }}>{cx.nombre}</strong>
-                                    <span style={{ fontSize: 12, opacity: 0.8 }}>{cx.zona}</span>
+                                <div className="d-flex flex-column gap-1">
+                                    <strong className="small">{cx.nombre}</strong>
+                                    <span className="small text-body-secondary">{cx.zona}</span>
 
-                                    <span style={{ fontSize: 12 }}>
-                                        <strong>Precio:</strong> S/ {cx.precioMin.toFixed(0)} – {cx.precioMax.toFixed(0)} /h
+                                    <span className="small">
+                                        <strong>Precio:</strong> S/{" "}
+                                        {Math.min(cx.precioMin, Math.min(cx.precioMax, PRECIO_MAX_VISIBLE)).toFixed(0)} –{" "}
+                                        {Math.min(cx.precioMax, PRECIO_MAX_VISIBLE).toFixed(0)} /h
                                     </span>
 
-                                    <span style={{ fontSize: 12 }}>
+                                    <span className="small">
                                         <strong>Canchas:</strong> {cx.canchasCount}
                                     </span>
 
                                     {/* Chips */}
-                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                                    <div className="d-flex flex-wrap gap-1 mt-1">
                                         {cx.techada && <Chip>Techada</Chip>}
                                         {cx.iluminacion && <Chip>Iluminación</Chip>}
                                         {cx.vestuarios && <Chip>Vestuarios</Chip>}
@@ -122,11 +133,13 @@ export default function MapaComplejos({
                                         {cx.cafeteria && <Chip>Cafetería</Chip>}
                                     </div>
 
-                                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                                        <button type="button" onClick={() => onReservar(cx)} style={btnPrimary}>
+                                    <div className="d-flex gap-2 mt-2 flex-wrap">
+                                        <button type="button" onClick={() => onReservar(cx)} className="btn btn-success btn-sm rounded-pill px-3">
+                                            <i className="bi bi-whatsapp me-2" aria-hidden="true"></i>
                                             Reservar
                                         </button>
-                                        <button type="button" onClick={() => onDetalles(cx)} style={btn}>
+                                        <button type="button" onClick={() => onDetalles(cx)} className="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                            <i className="bi bi-info-circle me-2" aria-hidden="true"></i>
                                             Detalles
                                         </button>
                                     </div>
@@ -134,40 +147,13 @@ export default function MapaComplejos({
                             </div>
                         </Popup>
                     </Marker>
-                ))}
+                    );
+                })}
             </MapContainer>
         </div>
     );
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-    return (
-        <span
-            style={{
-                fontSize: 11,
-                padding: "4px 8px",
-                borderRadius: 999,
-                border: "1px solid rgba(0,0,0,.15)",
-                background: "rgba(0,0,0,.04)",
-            }}
-        >
-            {children}
-        </span>
-    );
+    return <span className="badge text-bg-light border rounded-pill fw-semibold">{children}</span>;
 }
-
-const btn: React.CSSProperties = {
-    padding: "8px 10px",
-    borderRadius: 10,
-    border: "1px solid rgba(0,0,0,.18)",
-    background: "white",
-    cursor: "pointer",
-    fontSize: 12,
-};
-
-const btnPrimary: React.CSSProperties = {
-    ...btn,
-    border: "1px solid rgba(0,0,0,.18)",
-    background: "#111",
-    color: "white",
-};

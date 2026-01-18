@@ -1,7 +1,9 @@
-:root{
-  /* Base SaaS elegante */
-  --blanco: #ffffff;
+:root {
+  /* Tipografia */
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
 
+  /* Base */
+  --blanco: #ffffff;
   --gris-25: #fcfdff;
   --gris-50: #f8fafc;
   --gris-100: #f1f5f9;
@@ -9,31 +11,108 @@
   --gris-300: #cbd5e1;
   --gris-600: #475569;
 
-  /* Azul marino (marca) */
-  --azulMarino: #0b1630;
-  --azulMarino2: #102a56;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --negro: #0f172a;
 
-  /* Acento azul (sutil, para hovers y focus) */
+  /* Marca */
+  --azulMarino: #0b1220;
+  --azulMarino2: #102a56;
+  --azulPrimario: #1e40af;
   --azulAcento: #2563eb;
+  --moradoAcento: #7c3aed;
+  --verdeAcento: #22c55e;
 
   /* Texto */
-  --texto: var(--azulMarino);
+  --texto: var(--slate-900);
+  --texto-secundario: var(--slate-600);
+  --texto-terciario: #94a3b8;
   --muted: var(--gris-600);
 
-  /* Superficies y bordes */
-  --fondo: var(--blanco);
-  --superficie: var(--gris-50);
-  --superficie2: var(--gris-100);
-  --borde: var(--gris-200);
-  --bordeFuerte: var(--gris-300);
+  /* Superficies */
+  --fondo: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --fondo-alt: #ffffff;
+  --fondo-elevado: #ffffff;
+  --superficie: #ffffff;
+  --superficie2: #f8fafc;
+  --superficie3: #f1f5f9;
+  --glass: rgba(255, 255, 255, 0.72);
 
-  /* Radios / sombras */
-  --radio-md: 12px;
-  --radio-lg: 16px;
-  --radio-xl: 22px;
+  /* Bordes */
+  --borde: rgba(15, 23, 42, 0.08);
+  --bordeFuerte: rgba(15, 23, 42, 0.12);
+  --bordeHover: rgba(15, 23, 42, 0.18);
+  --borde-fuerte: var(--bordeFuerte);
+  --borde-hover: var(--bordeHover);
 
-  --sombra-sm: 0 8px 22px rgba(2, 6, 23, .06);
-  --sombra: 0 18px 55px rgba(2, 6, 23, .10);
+  /* Radios */
+  --radio-sm: 10px;
+  --radio-md: 14px;
+  --radio-lg: 18px;
+  --radio-xl: 24px;
+  --radio-full: 999px;
+  --radius-sm: var(--radio-sm);
+  --radius-md: var(--radio-md);
+  --radius-lg: var(--radio-lg);
+  --radius-xl: var(--radio-xl);
+  --radius-full: var(--radio-full);
 
+  /* Sombras */
+  --sombra-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --sombra-sm: 0 8px 22px rgba(2, 6, 23, 0.06);
+  --sombra-md: 0 12px 32px rgba(2, 6, 23, 0.08);
+  --sombra-lg: 0 18px 55px rgba(2, 6, 23, 0.12);
+  --sombra-glow: 0 0 0 6px rgba(37, 99, 235, 0.12);
+
+  /* Transiciones */
+  --transicion-fast: 150ms ease;
+  --transicion-base: 240ms ease;
+  --transicion-slow: 320ms ease;
+  --transition-fast: var(--transicion-fast);
+  --transition-base: var(--transicion-base);
+  --transition-slow: var(--transicion-slow);
+
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Layout */
   --contenedor: 1160px;
+
+  /* Defaults */
+  --_bg: var(--fondo, var(--blanco));
+  --_text: var(--texto, var(--slate-900));
+  --_muted: var(--muted, var(--slate-600));
+  --_border: var(--borde, rgba(15, 23, 42, 0.08));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    --fondo-alt: #0f172a;
+    --fondo-elevado: #111827;
+    --superficie: #111827;
+    --superficie2: #1e293b;
+    --superficie3: #0f172a;
+    --glass: rgba(15, 23, 42, 0.7);
+
+    --texto: #f1f5f9;
+    --texto-secundario: #cbd5e1;
+    --texto-terciario: #94a3b8;
+    --muted: #94a3b8;
+
+    --borde: rgba(255, 255, 255, 0.08);
+    --bordeFuerte: rgba(255, 255, 255, 0.12);
+    --bordeHover: rgba(255, 255, 255, 0.18);
+
+    --sombra-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --sombra-sm: 0 8px 22px rgba(0, 0, 0, 0.3);
+    --sombra-md: 0 12px 32px rgba(0, 0, 0, 0.35);
+    --sombra-lg: 0 18px 55px rgba(0, 0, 0, 0.4);
+  }
 }

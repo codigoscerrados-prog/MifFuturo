@@ -4,80 +4,263 @@
 @import "./base.css";
 @import "./utilidades.css";
 
-html{
+/* ===== Scrollbar Moderno ===== */
+html {
     overflow-y: scroll;
     scrollbar-gutter: stable;
+    scroll-behavior: smooth;
 }
 
-/* ===== Global (sin Tailwind) ===== */
-:root {
-    /* Fuente global */
-    --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-
-    /* Defaults por si algún token no existe (no rompe tu sistema) */
-    --_bg: var(--fondo, var(--blanco, #ffffff));
-    --_text: var(--texto, #0f172a);
-    --_muted: var(--muted, #64748b);
-    --_border: var(--borde, rgba(15, 23, 42, 0.12));
+/* Scrollbar personalizado (Webkit) */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
 }
 
-/* Mejoras de render */
+::-webkit-scrollbar-track {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.04) 100%);
+    border-left: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0.18) 100%);
+    border-radius: 100px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.24) 0%, rgba(15, 23, 42, 0.32) 100%);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.32) 0%, rgba(15, 23, 42, 0.4) 100%);
+    background-clip: padding-box;
+}
+
+/* Scrollbar Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.15) rgba(15, 23, 42, 0.03);
+}
+
+/* ===== Base Global Mejorada ===== */
 html {
     text-rendering: optimizeLegibility;
     -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-family: var(--font-sans);
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
 body {
     margin: 0;
-    min-height: 100dvh;
+    min-height: 100%;
+    position: relative;
     background: var(--_bg);
     color: var(--_text);
     font-family: var(--font-sans);
+    line-height: 1.6;
+    font-size: 16px;
+    overflow-x: hidden;
 }
 
-/* Box sizing */
+/* ===== Box Sizing Universal ===== */
 *,
 *::before,
 *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-/* Imágenes y medios */
+/* ===== Animaciones base ===== */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ===== Medios Responsivos ===== */
 img,
 svg,
 video,
-canvas {
+canvas,
+picture {
     max-width: 100%;
     height: auto;
+    display: block;
 }
 
-/* Links */
+/* ===== Links Modernos ===== */
 a {
     color: inherit;
     text-decoration: none;
+    transition: color var(--transition-fast);
 }
 
 a:hover {
     text-decoration: none;
+    opacity: 0.8;
 }
 
-/* Inputs */
+/* ===== Inputs y Controles ===== */
 input,
 select,
 textarea,
 button {
     font: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    outline: none;
 }
 
-/* Focus accesible */
+button {
+    cursor: pointer;
+    user-select: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--texto-terciario);
+    opacity: 1;
+}
+
+/* ===== Focus Moderno y Accesible ===== */
+:focus {
+    outline: none;
+}
+
 :focus-visible {
-    outline: 3px solid rgba(15, 23, 42, 0.22);
-    outline-offset: 3px;
-    border-radius: 10px;
+    outline: 2px solid rgba(59, 130, 246, 0.6);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
-/* Selección */
+/* ===== Selección de Texto ===== */
 ::selection {
-    background: rgba(15, 23, 42, 0.12);
+    background: rgba(59, 130, 246, 0.18);
+    color: var(--texto);
+}
+
+::-moz-selection {
+    background: rgba(59, 130, 246, 0.18);
+    color: var(--texto);
+}
+
+/* ===== Tipografía Mejorada ===== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0;
+    letter-spacing: -0.02em;
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+h3 {
+    font-size: 1.75rem;
+}
+
+h4 {
+    font-size: 1.5rem;
+}
+
+h5 {
+    font-size: 1.25rem;
+}
+
+h6 {
+    font-size: 1rem;
+}
+
+p {
+    margin-bottom: 0;
+    color: var(--texto-secundario);
+}
+
+/* ===== Listas ===== */
+ul,
+ol {
+    list-style: none;
+}
+
+/* ===== Animaciones Reducidas (Accesibilidad) ===== */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ===== Utilidades Globales ===== */
+.container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+.card {
+    background: var(--fondo-elevado);
+    border: 1px solid var(--borde);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--sombra-sm);
+    transition: all var(--transition-base);
+}
+
+.card:hover {
+    border-color: var(--borde-hover);
+    box-shadow: var(--sombra-md);
+    transform: translateY(-2px);
+}
+
+.glass {
+    background: var(--glass);
+    backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid var(--borde);
+}
+
+/* ===== Ocultar barra de desplazamiento global ===== */
+html {
+    scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .glass {
+        background: var(--glass);
+        border: 1px solid var(--borde);
+    }
 }

@@ -26,45 +26,6 @@ function IconoCancha({ className = "" }: { className?: string }) {
     );
 }
 
-function IconoContacto({ className = "" }: { className?: string }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 6h16v12H4z" />
-            <path d="M4 7l8 6 8-6" />
-        </svg>
-    );
-}
-
-function IconoBeneficios({ className = "" }: { className?: string }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3v18" />
-            <path d="M7 7h10" />
-            <path d="M7 17h10" />
-            <path d="M6 12h12" />
-        </svg>
-    );
-}
-
-function IconoInicio({ className = "" }: { className?: string }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 11l8-7 8 7" />
-            <path d="M6 10v10h12V10" />
-        </svg>
-    );
-}
-
-function IconoMenu({ className = "" }: { className?: string }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16" />
-            <path d="M4 12h16" />
-            <path d="M4 17h16" />
-        </svg>
-    );
-}
-
 function IconoCerrar({ className = "" }: { className?: string }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -78,9 +39,12 @@ export default function BarraNavegacion() {
     const router = useRouter();
     const pathname = usePathname();
 
+    if (pathname?.startsWith("/panel")) return null;
+
     const [token, setToken] = useState<string | null>(null);
     const [nombreUsuario, setNombreUsuario] = useState<string | null>(null);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
         const sync = () => setToken(getToken());
@@ -139,11 +103,19 @@ export default function BarraNavegacion() {
         };
     }, [menuOpen]);
 
+    useEffect(() => {
+        function onScroll() {
+            const y = window.scrollY;
+            setScrolled(y > 8);
+        }
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+
     const role = useMemo(() => getRoleFromToken(token), [token]);
     const rutaPanel = useMemo(() => rutaPorRole(role), [role]);
 
-    const isActiveInicio = pathname === "/";
-    const isActiveContacto = pathname?.startsWith("/contactanos");
     const isActivePanel = pathname === rutaPanel || pathname?.startsWith("/panel");
 
     function cerrarSesion() {
@@ -155,73 +127,87 @@ export default function BarraNavegacion() {
         router.refresh();
     }
 
+    const iniciales = useMemo(() => {
+        if (!nombreUsuario) return "CP";
+        const parts = nombreUsuario.trim().split(/\s+/).filter(Boolean);
+        const a = parts[0]?.[0] || "C";
+        const b = parts[1]?.[0] || "P";
+        return `${a}${b}`.toUpperCase();
+    }, [nombreUsuario]);
+
     return (
-        <header className={styles.header}>
-            <div className={`contenedor ${styles.contenido}`}>
-                <Link href="/" className={styles.logo} aria-label="Ir al inicio">
-                    <span className={styles.punto} />
-                    Canchas<span className={styles.marca}>Pro</span>
+        <header
+            className={`${styles.header} navbar`}
+            data-open={menuOpen ? "true" : "false"}
+            data-scrolled={scrolled ? "true" : "false"}
+        >
+            <div className={`contenedor container-xl px-3 ${styles.contenido}`}>
+                <Link
+                    href="/"
+                    className={`${styles.logo} navbar-brand d-inline-flex align-items-center gap-2 text-decoration-none`}
+                    aria-label="Ir al inicio"
+                >
+                    <span className={styles.logoIcon} aria-hidden="true">
+                        <IconoCancha className={`${styles.logoSvg} ${styles.iconoLegacy}`} />
+                        <i className={`bi bi-card-list ${styles.logoBi}`} aria-hidden="true"></i>
+                    </span>
+                    <span className={styles.logoText}>
+                        Canchas<span className={styles.logoTextAccent}>Pro</span>
+                    </span>
                 </Link>
 
-                {/* Desktop nav */}
-                <nav className={styles.nav} aria-label="Navegación principal">
-                    <div className={styles.navGrupo}>
-                        <Link href="/" className={`${styles.link} ${isActiveInicio ? styles.activo : ""}`}>
-                            <IconoInicio className={styles.iconoLinea} />
-                            Inicio
-                        </Link>
-
-                        
-
-                        <Link href="/contactanos" className={`${styles.link} ${isActiveContacto ? styles.activo : ""}`}>
-                            <IconoContacto className={styles.iconoLinea} />
-                            Contáctanos
-                        </Link>
-                    </div>
-                </nav>
-
+                
                 {/* Acciones */}
-                <div className={styles.acciones}>
+                <div className={`${styles.acciones} d-none d-md-flex align-items-center`}>
                     {!token ? (
                         <>
-                            <Link className={`boton ${styles.botonGhost}`} href="/iniciar-sesion">
-                                Iniciar sesión
+                            <Link className={`boton ${styles.btnGhost} d-inline-flex align-items-center gap-2`} href="/registrarse/usuario">
+                                Crear Tu Perfil de Jugador
                             </Link>
-                            <Link className={`boton botonPrimario`} href="/registrarse">
-                                Registrarse
+                            <Link className={`boton ${styles.btnGhost} d-inline-flex align-items-center gap-2`} href="/registrarse/propietario">
+                                Registra tu Complejo
+                            </Link>
+                            <Link className={`boton ${styles.btnAction} d-inline-flex align-items-center gap-2`} href="/iniciar-sesion">
+                                Iniciar Sesión
                             </Link>
                         </>
                     ) : (
                         <>
-                            <span
-                                className={styles.userName}
-                                aria-hidden={!nombreUsuario}
-                                data-empty={!nombreUsuario}
-                            >
-                                {nombreUsuario ? `Hola, ${nombreUsuario}` : "Hola"}
-                            </span>
-
+                            <div className={`${styles.userPill} d-inline-flex align-items-center`}>
+                                <span className={styles.userAvatar} aria-hidden="true">
+                                    {iniciales}
+                                </span>
+                                <span className={styles.userName} aria-hidden={!nombreUsuario} data-empty={!nombreUsuario}>
+                                    <i className={`bi bi-person-lines-fill ${styles.userBi}`} aria-hidden="true"></i>
+                                    {nombreUsuario ? `Hola, ${nombreUsuario}` : "Hola"}
+                                </span>
+                            </div>
 
                             <Link
-                                className={`boton ${styles.botonGhost} ${styles.desktopOnly} ${isActivePanel ? styles.botonActive : ""}`}
+                                className={`boton ${styles.btnGhost} ${styles.desktopOnly} d-inline-flex align-items-center gap-2 ${isActivePanel ? styles.botonActive : ""
+                                    }`}
                                 href={rutaPanel}
                             >
+                                <i className={`bi bi-speedometer2 ${styles.btnIcon}`} aria-hidden="true"></i>
                                 Ir a mi panel
                             </Link>
 
-                            <button type="button" className={`boton ${styles.botonSalir} ${styles.desktopOnly}`} onClick={cerrarSesion}>
+                            <button
+                                type="button"
+                                className={`boton ${styles.btnDanger} ${styles.desktopOnly} d-inline-flex align-items-center gap-2`}
+                                onClick={cerrarSesion}
+                            >
+                                <i className={`bi bi-box-arrow-right ${styles.btnIcon}`} aria-hidden="true"></i>
                                 Cerrar sesión
                             </button>
                         </>
                     )}
-
-                    
                 </div>
 
-                {/* Boton menu movil */}
+                {/* Botón menú móvil */}
                 <button
                     type="button"
-                    className={styles.botonMenu}
+                    className={`${styles.botonMenu} d-inline-flex d-md-none`}
                     aria-label={menuOpen ? "Cerrar menu" : "Abrir menu"}
                     aria-expanded={menuOpen}
                     onClick={(e) => {
@@ -230,47 +216,58 @@ export default function BarraNavegacion() {
                         setMenuOpen((v) => !v);
                     }}
                 >
-                    {menuOpen ? (
-                        <IconoCerrar className={styles.iconoMenu} />
-                    ) : (
-                        <IconoMenu className={styles.iconoMenu} />
-                    )}
+                    <span className={`${styles.hamburger} ${menuOpen ? styles.hamburgerActivo : ""}`} aria-hidden="true">
+                        <span className={styles.hamburgerLine} />
+                        <span className={styles.hamburgerLine} />
+                        <span className={styles.hamburgerLine} />
+                    </span>
                 </button>
-
             </div>
 
             {/* Overlay + panel móvil */}
             <div className={`${styles.overlay} ${menuOpen ? styles.overlayOn : ""}`} onClick={() => setMenuOpen(false)} />
 
-            <div className={`${styles.movil} ${menuOpen ? styles.movilOn : ""}`} role="dialog" aria-modal="true">
-                <div className={`contenedor ${styles.movilContenido}`}>
-                    <Link href="/" className={`${styles.movilLink} ${isActiveInicio ? styles.movilActivo : ""}`}>
-                        <IconoInicio className={styles.iconoLinea} />
-                        Inicio
-                    </Link>
+            <div className={`${styles.movil} ${menuOpen ? styles.movilOn : ""} shadow-lg`} role="dialog" aria-modal="true">
+                <div className={styles.movilHeader}>
+                    <div className={styles.movilBrand}>
+                        <span className={styles.logoIcon} aria-hidden="true">
+                            <IconoCancha className={`${styles.logoSvg} ${styles.iconoLegacy}`} />
+                            <i className={`bi bi-card-list ${styles.logoBi}`} aria-hidden="true"></i>
+                        </span>
+                        <span className={styles.logoText}>
+                            Canchas<span className={styles.logoTextAccent}>Pro</span>
+                        </span>
+                    </div>
 
+                    <button type="button" className={styles.movilClose} onClick={() => setMenuOpen(false)} aria-label="Cerrar menú">
+                        <IconoCerrar className={`${styles.iconoClose} ${styles.iconoLegacy}`} />
+                        <i className={`bi bi-x-lg ${styles.biClose}`} aria-hidden="true"></i>
+                    </button>
+                </div>
 
-                    <Link href="/contactanos" className={`${styles.movilLink} ${isActiveContacto ? styles.movilActivo : ""}`}>
-                        <IconoContacto className={styles.iconoLinea} />
-                        Contáctanos
-                    </Link>
-
+                <div className={styles.movilContenido}>
                     <div className={styles.movilAcciones}>
                         {!token ? (
                             <>
-                                <Link className={`boton ${styles.botonFull} ${styles.botonGhost}`} href="/iniciar-sesion">
-                                    Iniciar sesión
+                                <Link className={`boton ${styles.botonFull} ${styles.btnGhost} d-inline-flex align-items-center gap-2`} href="/registrarse/propietario">
+                                    Publica tu cancha
                                 </Link>
-                                <Link className={`boton botonPrimario ${styles.botonFull}`} href="/registrarse">
-                                    Registrarse
+                                <Link className={`boton ${styles.botonFull} ${styles.btnAction} d-inline-flex align-items-center gap-2`} href="/registrarse/usuario">
+                                    Crea tu perfil jugador
                                 </Link>
                             </>
                         ) : (
                             <>
-                                <Link className={`boton ${styles.botonFull} ${styles.botonGhost}`} href={rutaPanel}>
+                                <Link className={`boton ${styles.botonFull} ${styles.btnGhost} d-inline-flex align-items-center gap-2`} href={rutaPanel}>
+                                    <i className={`bi bi-speedometer2 ${styles.btnIcon}`} aria-hidden="true"></i>
                                     Ir a mi panel
                                 </Link>
-                                <button type="button" className={`boton ${styles.botonFull} ${styles.botonSalir}`} onClick={cerrarSesion}>
+                                <button
+                                    type="button"
+                                    className={`boton ${styles.botonFull} ${styles.btnDanger} d-inline-flex align-items-center gap-2`}
+                                    onClick={cerrarSesion}
+                                >
+                                    <i className={`bi bi-box-arrow-right ${styles.btnIcon}`} aria-hidden="true"></i>
                                     Cerrar sesión
                                 </button>
                             </>

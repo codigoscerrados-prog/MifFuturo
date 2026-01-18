@@ -1,0 +1,159 @@
+.seccion {
+  padding: 0;
+}
+
+.banner {
+  position: relative;
+  border-radius: 0;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  box-shadow: var(--sombra-md);
+  background-image: url("/fondo_lonuevo.jpg");
+  background-size: cover;
+  background-position: center;
+  transition: transform var(--transicion-base), box-shadow var(--transicion-base), border-color var(--transicion-fast);
+  width: 100%;
+}
+
+.banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.45)),
+    radial-gradient(760px 420px at 10% 20%, rgba(37, 99, 235, 0.2), transparent 60%);
+}
+
+.banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0 1px, transparent 1px 8px);
+  pointer-events: none;
+}
+
+.banner:hover {
+  border-color: var(--bordeHover);
+  box-shadow: var(--sombra-lg);
+  transform: translateY(-2px);
+}
+
+.contenido {
+  position: relative;
+  z-index: 1;
+  padding: clamp(22px, 5vw, 48px);
+  color: white;
+}
+
+.info {
+  display: grid;
+  gap: 14px;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.85);
+}
+
+.kicker i {
+  font-size: 1rem;
+}
+
+.titulo {
+  margin: 0;
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 900;
+  color: white;
+}
+
+.texto {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.88);
+  font-weight: 600;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: center;
+  font-weight: 600;
+  color: rgba(248, 250, 252, 0.9);
+}
+
+.item i {
+  color: var(--verdeAcento);
+  font-size: 1rem;
+}
+
+.ctaBtn {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 18px 44px rgba(37, 99, 235, 0.22);
+}
+
+.sideCard {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  color: white;
+  border-radius: 0;
+}
+
+.sideHead {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 700;
+}
+
+.sideNote {
+  color: rgba(226, 232, 240, 0.85);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .banner::before {
+    background:
+      linear-gradient(120deg, rgba(2, 6, 23, 0.88), rgba(2, 6, 23, 0.55)),
+      radial-gradient(760px 420px at 10% 20%, rgba(37, 99, 235, 0.28), transparent 60%);
+  }
+}

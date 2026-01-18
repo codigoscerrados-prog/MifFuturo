@@ -1,14 +1,196 @@
 /* SeccionPanel.module.css */
 
 .seccion {
+    animation: fadeUp 0.5s ease both;
     padding: 0;
+    min-height: 100vh;
 }
 
 /* ✅ Contenedor centrado (evita que todo se vaya a los extremos) */
 .contenedor {
-    max-width: var(--contenedor, 1160px);
+    max-width: 100%;
     margin: 0 auto;
-    padding: 18px 16px 28px;
+    padding: 18px 20px 28px;
+    min-height: 100vh;
+}
+
+/* ===== Layout ===== */
+.layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+    min-height: calc(100vh - 36px);
+}
+
+.sidebar {
+    position: sticky;
+    top: 86px;
+    align-self: start;
+    height: 100%;
+}
+
+.sidebarCard {
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xl);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    box-shadow: var(--sombra-sm);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    backdrop-filter: blur(12px);
+    height: 100%;
+}
+
+.main {
+    min-width: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brandLink {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.brandLink:hover .brandTitle,
+.brandLink:focus-visible .brandTitle {
+    color: var(--azulAcento);
+}
+
+.brandLink:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+    border-radius: 16px;
+}
+
+.brandIcon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--azulMarino);
+    font-size: 20px;
+}
+
+.brandTitle {
+    margin: 4px 0 0;
+    font-weight: 950;
+    color: var(--azulMarino);
+}
+
+.userCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--borde);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.65));
+    box-shadow: var(--sombra-sm);
+}
+
+.avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    font-weight: 950;
+    color: var(--azulMarino);
+}
+
+.avatarImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatarText {
+    font-size: 18px;
+}
+
+.userInfo {
+    min-width: 0;
+}
+
+.userName {
+    margin: 0;
+    font-weight: 950;
+    color: var(--azulMarino);
+}
+
+.userMeta {
+    margin: 4px 0 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    word-break: break-word;
+}
+
+.sidebarNav {
+    border-top: 1px solid var(--borde);
+    padding-top: 12px;
+}
+
+.sidebarCalendarSlot {
+    min-height: 0;
+    margin-top: 12px;
+}
+
+.sidebarFooter {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--borde);
+}
+
+.sidebarLogout {
+    width: 100%;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.10);
+    color: #7f1d1d;
+    font-weight: 950;
+    border-radius: 14px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.sidebarLogout:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.sidebarLogout:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+}
+
+.sidebarSummary {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-weight: 900;
+    color: var(--azulMarino);
+    cursor: pointer;
+    list-style: none;
+}
+
+.sidebarSummary::-webkit-details-marker {
+    display: none;
 }
 
 /* ===== Header ===== */
@@ -91,6 +273,7 @@
     border: 1px solid var(--borde);
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
     box-shadow: var(--sombra-sm);
+    transition: box-shadow var(--transicion-fast), border-color var(--transicion-fast), transform var(--transicion-fast);
 }
 
 .planChipLabel {
@@ -114,8 +297,8 @@
 
 /* FREE */
 .planChipFree {
-    border-color: rgba(31, 190, 106, 0.35);
-    background: rgba(31, 190, 106, 0.08);
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.08);
 }
 
 .planChipFree .planChipValue {
@@ -124,35 +307,46 @@
 
 /* PRO */
 .planChipPro {
-    border-color: rgba(245, 158, 11, 0.35);
-    background: rgba(245, 158, 11, 0.10);
+    border-color: rgba(124, 58, 237, 0.35);
+    background: rgba(124, 58, 237, 0.10);
 }
 
 .planChipPro .planChipValue {
-    color: #92400e;
+    color: var(--moradoAcento);
 }
 
 /* ===== Tabs ===== */
 .tabs {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 10px 0 16px;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .tab {
     border: 1px solid var(--borde);
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
     padding: 10px 12px;
-    border-radius: 999px;
+    border-radius: 14px;
     font-weight: 900;
     color: var(--azulMarino);
     cursor: pointer;
     box-shadow: var(--sombra-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.tabLeft {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    min-width: 0;
+}
+
+.tabIcon {
+    font-size: 1rem;
 }
 
 .tab:hover {
@@ -163,6 +357,12 @@
 .tabActiva {
     border-color: var(--azulMarino);
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.02));
+}
+
+.tab:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+    transform: translateY(-1px);
 }
 
 .tabLocked {
@@ -177,9 +377,9 @@
     border-radius: 999px;
     font-size: 12px;
     font-weight: 950;
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    background: rgba(245, 158, 11, 0.12);
-    color: #92400e;
+    border: 1px solid rgba(124, 58, 237, 0.35);
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--moradoAcento);
 }
 
 /* ===== Helpers ===== */
@@ -198,5 +398,23 @@
 
     .planHint {
         max-width: 100%;
+    }
+
+    .layout {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .sidebar {
+        position: static;
+        height: auto;
+    }
+
+    .sidebarSummary {
+        display: inline-flex;
+    }
+
+    .sidebarNav[open] .tabs {
+        margin-top: 10px;
     }
 }

@@ -54,6 +54,15 @@ function normalizeStatus(st?: string | null) {
     return String(st || "active").toLowerCase();
 }
 
+const ICON_BY_TAB: Record<string, string> = {
+    perfil: "bi-person",
+    "mi-complejo": "bi-building",
+    "mis-canchas": "bi-grid-1x2",
+    reservas: "bi-calendar2-check",
+    historial: "bi-clock-history",
+    admin: "bi-shield-check",
+};
+
 export default function SeccionPanel({
     token: tokenProp,
     role: roleProp,
@@ -108,8 +117,24 @@ export default function SeccionPanel({
         return false;
     }, [plan]);
 
+    const nombreCompleto = useMemo(() => {
+        const first = (perfil?.first_name || "").trim();
+        const last = (perfil?.last_name || "").trim();
+        return [first, last].filter(Boolean).join(" ");
+    }, [perfil?.first_name, perfil?.last_name]);
+
+    const displayName = useMemo(() => {
+        return (
+            nombreCompleto ||
+            (perfil?.business_name || "").trim() ||
+            (perfil?.username || "").trim() ||
+            (perfil?.email || "").trim() ||
+            "-"
+        );
+    }, [nombreCompleto, perfil?.business_name, perfil?.username, perfil?.email]);
+
     const planLabel = useMemo(() => {
-        if (planLoading) return "…";
+        if (planLoading) return "...";
         return isPro ? "PRO" : "FREE";
     }, [isPro, planLoading]);
 
@@ -203,109 +228,154 @@ export default function SeccionPanel({
     return (
         <section className={styles.seccion}>
             <div className={styles.contenedor}>
-                <div className={styles.header}>
-                    <div>
-                        <p className={styles.kicker}>Proyecto Canchas</p>
-                        <h1 className={styles.titulo}>Panel</h1>
-                        <p className={styles.muted}>Gestiona tu cuenta, canchas y reservas</p>
-                    </div>
+                <div className={styles.layout}>
+                    <aside className={styles.sidebar}>
+                        <div className={styles.sidebarCard}>
+                            <Link className={styles.brandLink} href="/" aria-label="Ir al inicio">
+                                <div className={styles.brand}>
+                                    <div className={styles.brandIcon} aria-hidden="true">
+                                        <i className="bi bi-building"></i>
+                                    </div>
+                                    <div>
+                                        <p className={styles.kicker}>Proyecto Canchas</p>
+                                        <p className={styles.brandTitle}>Panel</p>
+                                    </div>
+                                </div>
+                            </Link>
 
-                    <div className={styles.headerBtns}>
-                        <div className={styles.planWrap}>
-                            <div
-                                className={cn(
-                                    styles.planChip,
-                                    planLoading && styles.planChipLoading,
-                                    !planLoading && (isPro ? styles.planChipPro : styles.planChipFree)
-                                )}
-                            >
-                                <span className={styles.planChipLabel}>Plan</span>
-                                <span className={styles.planChipValue}>{planLabel}</span>
+                            <div className={styles.userCard}>
+                                <div className={styles.avatar}>
+                                    {perfil?.avatar_url ? (
+                                        <img src={perfil.avatar_url} alt={displayName} className={styles.avatarImg} />
+                                    ) : (
+                                        <span className={styles.avatarText}>{displayName.slice(0, 1).toUpperCase()}</span>
+                                    )}
+                                </div>
+                                <div className={styles.userInfo}>
+                                    <p className={styles.userName}>{displayName}</p>
+                                    {perfil?.email ? <p className={styles.userMeta}>{perfil.email}</p> : null}
+                                </div>
                             </div>
 
-                            <span className={styles.planHint}>
-                                {planLoading
-                                    ? "Verificando tu plan…"
-                                    : isPro
-                                        ? "Acceso completo a canchas y reservas."
-                                        : "Desbloquea Mis Canchas y Reservas con PRO."}
-                            </span>
+                            <details className={styles.sidebarNav} open>
+                                <summary className={styles.sidebarSummary}>
+                                    <i className="bi bi-list" aria-hidden="true"></i>
+                                    Panel
+                                </summary>
+                                <nav className={styles.tabs}>
+                                    {tabs.map((t) => (
+                                        <button
+                                            key={t.key}
+                                            type="button"
+                                            className={cn(styles.tab, tab === t.key && styles.tabActiva, t.locked && styles.tabLocked)}
+                                            onClick={() => handleSelectTab(t.key)}
+                                            title={t.locked ? "Disponible solo en PRO" : t.label}
+                                        >
+                                            <span className={styles.tabLeft}>
+                                                <i className={`bi ${ICON_BY_TAB[t.key] || "bi-grid"} ${styles.tabIcon}`} aria-hidden="true"></i>
+                                                <span>{t.label}</span>
+                                            </span>
+                                            {t.locked ? <span className={styles.lockBadge}>PRO</span> : null}
+                                        </button>
+                                    ))}
+                                </nav>
+                            </details>
+
+                            <div id="panel-reservas-calendar-slot" className={styles.sidebarCalendarSlot} />
+
+                            <div className={styles.sidebarFooter}>
+                                <button type="button" className={styles.sidebarLogout} onClick={cerrarSesion}>
+                                    Cerrar sesion
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <div className={styles.main}>
+                        <div className={styles.header}>
+                            
+
+                            <div className={styles.headerBtns}>
+                                <div className={styles.planWrap}>
+                                    <div
+                                        className={cn(
+                                            styles.planChip,
+                                            planLoading && styles.planChipLoading,
+                                            !planLoading && (isPro ? styles.planChipPro : styles.planChipFree)
+                                        )}
+                                    >
+                                        <span className={styles.planChipLabel}>Plan</span>
+                                        <span className={styles.planChipValue}>{planLabel}</span>
+                                    </div>
+
+                                    <span className={styles.planHint}>
+                                        {planLoading
+                                            ? "Verificando tu plan..."
+                                            : isPro
+                                                ? "Acceso completo a canchas y reservas."
+                                                : "Desbloquea Mis Canchas y Reservas con PRO."}
+                                    </span>
+                                </div>
+
+                                {role === "propietario" && !planLoading && !isPro ? (
+                                    <Link href="/plan-premium" className="boton botonPrimario">
+                                        Subir a PRO
+                                    </Link>
+                                ) : null}
+                            </div>
                         </div>
 
-                        {role === "propietario" && !planLoading && !isPro ? (
-                            <Link href="/plan-premium" className="boton botonPrimario">
-                                Subir a PRO
-                            </Link>
-                        ) : null}
+                        {error ? <div className={styles.alertError}>{error}</div> : null}
 
-                        
+                        {cargando ? (
+                            <div className={`tarjeta ${styles.tarjeta}`}>
+                                <p className={styles.muted}>Cargando...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {role === "propietario" && tab === "mi-complejo" ? <SeccionComplejos token={token} /> : null}
+                                {role === "propietario" && tab === "mis-canchas" ? <PanelCanchasPropietario token={token} /> : null}
+                                {role === "propietario" && tab === "reservas" ? <PanelReservasPropietario token={token} /> : null}
+
+                                {tab === "perfil" ? (
+                                    perfil ? (
+                                        <SeccionPerfil
+                                            token={token}
+                                            role={role}
+                                            perfil={perfil}
+                                            onPerfilUpdated={(p: any) => {
+                                                setPerfil(p);
+                                                if (typeof onPerfilUpdated === "function") onPerfilUpdated(p);
+                                            }}
+                                            onLogout={cerrarSesion}
+                                        />
+                                    ) : (
+                                        <div className={`tarjeta ${styles.tarjeta}`}>
+                                            <p className={styles.muted}>
+                                                No se pudo cargar tu perfil.{" "}
+                                                <button className="boton" type="button" onClick={() => window.location.reload()}>
+                                                    Recargar
+                                                </button>
+                                            </p>
+                                        </div>
+                                    )
+                                ) : null}
+
+                                {role === "usuario" && tab === "historial" ? (
+                                    <div className={`tarjeta ${styles.tarjeta}`}>
+                                        <p className={styles.muted}>Aqui va tu historial (tu componente actual).</p>
+                                    </div>
+                                ) : null}
+
+                                {role === "admin" && tab === "admin" ? (
+                                    <div className={`tarjeta ${styles.tarjeta}`}>
+                                        <p className={styles.muted}>Admin: usa la ruta {rutaPorRole("admin")} para tus modulos.</p>
+                                    </div>
+                                ) : null}
+                            </>
+                        )}
                     </div>
                 </div>
-
-                {error ? <div className={styles.alertError}>{error}</div> : null}
-
-                <div className={styles.tabs}>
-                    {tabs.map((t) => (
-                        <button
-                            key={t.key}
-                            type="button"
-                            className={cn(styles.tab, tab === t.key && styles.tabActiva, t.locked && styles.tabLocked)}
-                            onClick={() => handleSelectTab(t.key)}
-                            title={t.locked ? "Disponible solo en PRO" : t.label}
-                        >
-                            {t.label}
-                            {t.locked ? <span className={styles.lockBadge}>PRO</span> : null}
-                        </button>
-                    ))}
-                </div>
-
-                {cargando ? (
-                    <div className={`tarjeta ${styles.tarjeta}`}>
-                        <p className={styles.muted}>Cargando…</p>
-                    </div>
-                ) : (
-                    <>
-                        {role === "propietario" && tab === "mi-complejo" ? <SeccionComplejos token={token} /> : null}
-                        {role === "propietario" && tab === "mis-canchas" ? <PanelCanchasPropietario token={token} /> : null}
-                        {role === "propietario" && tab === "reservas" ? <PanelReservasPropietario token={token} /> : null}
-
-                        {tab === "perfil" ? (
-                            perfil ? (
-                                <SeccionPerfil
-                                    token={token}
-                                    role={role}
-                                    perfil={perfil}
-                                    onPerfilUpdated={(p: any) => {
-                                        setPerfil(p);
-                                        if (typeof onPerfilUpdated === "function") onPerfilUpdated(p);
-                                    }}
-                                    onLogout={cerrarSesion}
-                                />
-                            ) : (
-                                <div className={`tarjeta ${styles.tarjeta}`}>
-                                    <p className={styles.muted}>
-                                        No se pudo cargar tu perfil.{" "}
-                                        <button className="boton" type="button" onClick={() => window.location.reload()}>
-                                            Recargar
-                                        </button>
-                                    </p>
-                                </div>
-                            )
-                        ) : null}
-
-                        {role === "usuario" && tab === "historial" ? (
-                            <div className={`tarjeta ${styles.tarjeta}`}>
-                                <p className={styles.muted}>Aquí va tu historial (tu componente actual).</p>
-                            </div>
-                        ) : null}
-
-                        {role === "admin" && tab === "admin" ? (
-                            <div className={`tarjeta ${styles.tarjeta}`}>
-                                <p className={styles.muted}>Admin: usa la ruta {rutaPorRole("admin")} para tus módulos.</p>
-                            </div>
-                        ) : null}
-                    </>
-                )}
             </div>
         </section>
     );

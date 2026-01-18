@@ -4,13 +4,14 @@
 
 .shell {
     width: 100%;
-    max-width: 1320px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     padding: 0;
 }
 
 /* ===== Header ===== */
 .header {
+    width: 100%;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -70,15 +71,15 @@
     width: 10px;
     height: 10px;
     border-radius: 999px;
-    background: #1fbe6a;
-    box-shadow: 0 0 0 0 rgba(31, 190, 106, .35);
+    background: var(--verdeAcento);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, .35);
     animation: pulseDot 2s infinite;
 }
 
 @keyframes pulseDot {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 190, 106, .35); }
-    70% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(31, 190, 106, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 190, 106, 0); }
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, .35); }
+    70% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 .btnPrimary {
@@ -100,6 +101,12 @@
     transform: translateY(-1px);
     box-shadow: 0 14px 32px rgba(15, 23, 42, .08);
     filter: brightness(.99);
+}
+
+.btnPrimary:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+    transform: translateY(-1px);
 }
 
 .btnIcon {
@@ -138,10 +145,18 @@
     align-items: start;
 }
 
+.mainGrid > * {
+    min-width: 0;
+}
+
 @media (min-width: 980px) {
     .mainGrid {
-        grid-template-columns: 380px 1.45fr 1fr;
+        grid-template-columns: 1fr;
         gap: 12px;
+    }
+
+    .mainGridWide {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -151,6 +166,29 @@
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
     box-shadow: var(--sombra-sm);
     padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+.cardList {
+    max-width: 100%;
+    width: 100%;
+    justify-self: stretch;
+    margin: 0;
+    align-self: start;
+    position: static;
+}
+
+@media (max-width: 980px) {
+    .cardList {
+        max-width: 100%;
+    }
+}
+
+.cardSchedule {
+    width: 100%;
+    min-width: 0;
 }
 
 .cardCalendar {
@@ -218,10 +256,16 @@
     display: grid;
     place-items: center;
     cursor: pointer;
+    transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
 }
 
 .iconBtn:hover {
     filter: brightness(.985);
+}
+
+.iconBtn:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
 }
 
 .icon {
@@ -278,14 +322,20 @@
     box-shadow: 0 14px 32px rgba(15, 23, 42, .08);
 }
 
+.calendarDay:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+    border-color: rgba(37, 99, 235, .35);
+}
+
 .calendarDayNum {
     font-weight: 950;
     color: var(--azulMarino);
 }
 
 .calendarDayToday {
-    border-color: rgba(31, 190, 106, .35);
-    background: rgba(31, 190, 106, .08);
+    border-color: rgba(34, 197, 94, .35);
+    background: rgba(34, 197, 94, .08);
 }
 
 .calendarDaySelected {
@@ -427,6 +477,11 @@
     filter: brightness(.99);
 }
 
+.canchaTab:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+}
+
 .canchaTabActive {
     border-color: rgba(15, 23, 42, .25);
     background: linear-gradient(180deg, rgba(15, 23, 42, .06), rgba(15, 23, 42, .02));
@@ -446,20 +501,276 @@
 }
 
 /* ===== Agenda ===== */
+.viewTabs {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.viewBtn {
+    border: 1px solid var(--borde);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-weight: 900;
+    color: var(--azulMarino);
+    cursor: pointer;
+    box-shadow: var(--sombra-sm);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.viewBtn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(15, 23, 42, .25);
+}
+
+.viewBtnActive {
+    border-color: rgba(37, 99, 235, .35);
+    background: rgba(37, 99, 235, .12);
+    color: rgba(15, 23, 42, .92);
+}
+
 .agendaScroll {
-    display: grid;
-    gap: 10px;
-    max-height: 650px;
-    overflow: auto;
-    padding-right: 6px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xl);
+    background: var(--blanco);
+    box-shadow: var(--sombra-sm);
+    height: min(72vh, 720px);
+    width: 100%;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 16px;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(71, 85, 105, .6) rgba(15, 23, 42, .08);
 }
 
 .agendaScroll::-webkit-scrollbar {
-    width: 10px;
+    height: 12px;
+    width: 12px;
 }
 .agendaScroll::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, .35);
+    background: rgba(71, 85, 105, .5);
     border-radius: 999px;
+}
+.agendaScroll::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, .06);
+    border-radius: 999px;
+}
+
+.timelineEmpty {
+    border: 1px dashed var(--bordeFuerte);
+    border-radius: var(--radio-xl);
+    padding: 16px;
+    text-align: center;
+    font-weight: 900;
+    color: var(--muted);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+}
+
+.timelineGrid {
+    --court-count: 1;
+    display: inline-block;
+    min-width: max(100%, calc(80px + (var(--court-count) * 180px)));
+    width: max-content;
+}
+
+.timelineHeaderRow {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 80px repeat(var(--court-count), 180px);
+    min-width: 100%;
+    width: max-content;
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    border-bottom: 1px solid var(--borde);
+}
+
+.timelineCorner {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    padding: 12px 10px;
+    font-weight: 950;
+    color: var(--azulMarino);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    border-right: 1px solid var(--borde);
+}
+
+.timelineHeaderCell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 10px;
+    border-left: 1px solid var(--borde);
+    font-weight: 900;
+    color: var(--azulMarino);
+}
+
+.timelineHeaderActive {
+    box-shadow: inset 0 -3px 0 rgba(37, 99, 235, .35);
+}
+
+.timelineDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .9);
+}
+
+.timelineLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.timelineBody {
+    display: grid;
+    min-width: 100%;
+    width: max-content;
+}
+
+.timelineRow {
+    display: grid;
+    grid-template-columns: 80px repeat(var(--court-count), 180px);
+    min-height: 72px;
+    min-width: 100%;
+    width: max-content;
+    border-bottom: 1px solid var(--borde);
+}
+
+.timeCell {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    padding: 12px 10px;
+    font-weight: 950;
+    color: var(--azulMarino);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    border-right: 1px solid var(--borde);
+    display: flex;
+    align-items: center;
+}
+
+.slotCell {
+    padding: 6px;
+    border-left: 1px solid var(--borde);
+    display: flex;
+    align-items: stretch;
+}
+
+.slotCellPast {
+    opacity: .6;
+    filter: grayscale(.1);
+    align-items: center;
+    justify-content: center;
+}
+
+.slotButton {
+    width: 100%;
+    border: 1px dashed var(--borde);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, .02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.slotButton:hover {
+    transform: translateY(-1px);
+    border-color: rgba(15, 23, 42, .25);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, .08);
+}
+
+.eventCard {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--borde);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    box-shadow: var(--sombra-sm);
+    padding: 8px 10px;
+    display: grid;
+    gap: 6px;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.eventCard:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, .08);
+}
+
+.eventTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.eventTitle {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.eventName {
+    font-weight: 950;
+    color: var(--azulMarino);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.eventTime {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.eventMeta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.eventPhone {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.eventActions {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.eventOk {
+    border-color: rgba(34, 197, 94, .35);
+    background: rgba(34, 197, 94, .08);
+}
+
+.eventWarn {
+    border-color: rgba(124, 58, 237, .35);
+    background: rgba(124, 58, 237, .10);
+}
+
+.eventOff {
+    border-color: rgba(100, 116, 139, .35);
+    background: rgba(100, 116, 139, .08);
+}
+
+.eventPending {
+    border-color: rgba(15, 23, 42, .18);
+    background: rgba(15, 23, 42, .04);
 }
 
 .timeSlot {
@@ -529,8 +840,8 @@
 
 /* estados */
 .slotBooked {
-    border-color: rgba(31, 190, 106, .25);
-    background: rgba(31, 190, 106, .06);
+    border-color: rgba(34, 197, 94, .25);
+    background: rgba(34, 197, 94, .06);
 }
 
 .slotPast {
@@ -587,15 +898,15 @@
 }
 
 .statusOk {
-    border-color: rgba(31, 190, 106, .35);
-    background: rgba(31, 190, 106, .10);
+    border-color: rgba(34, 197, 94, .35);
+    background: rgba(34, 197, 94, .10);
     color: #14532d;
 }
 
 .statusWarn {
-    border-color: rgba(245, 158, 11, .35);
-    background: rgba(245, 158, 11, .10);
-    color: #92400e;
+    border-color: rgba(124, 58, 237, .35);
+    background: rgba(124, 58, 237, .10);
+    color: var(--moradoAcento);
 }
 
 .statusOff {
@@ -636,15 +947,16 @@
 }
 
 .listScroll {
-    display: grid;
+    display: flex;
     gap: 10px;
-    max-height: 720px;
-    overflow: auto;
-    padding-right: 6px;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
 }
 
 .listScroll::-webkit-scrollbar {
-    width: 10px;
+    height: 10px;
 }
 .listScroll::-webkit-scrollbar-thumb {
     background: rgba(148, 163, 184, .35);
@@ -654,9 +966,16 @@
 .reservationCard {
     border: 1px solid var(--borde);
     border-radius: 18px;
-    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .94), rgba(255, 255, 255, .86)),
+        var(--res-accent-soft, rgba(15, 23, 42, .04));
+    border-color: var(--res-accent, var(--borde));
     box-shadow: var(--sombra-sm);
-    padding: 14px;
+    padding: 8px 12px;
+    width: 100%;
+    min-width: 360px;
+    max-width: 300px;
+    margin: 0;
     transition: transform .15s ease, box-shadow .15s ease;
 }
 
@@ -688,26 +1007,28 @@
 }
 
 .resTime {
+    font-size: 12px;
     font-weight: 950;
     color: var(--azulMarino);
 }
 
 .resName {
-    margin: 10px 0 2px;
+    margin: 6px 0 2px;
     font-weight: 950;
     color: var(--azulMarino);
+    font-size: 13px;
 }
 
 .resPhone {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--muted);
     font-weight: 800;
 }
 
 .resNotes {
-    margin: 10px 0 0;
-    font-size: 12px;
+    margin: 6px 0 0;
+    font-size: 11px;
     color: var(--muted);
     font-style: italic;
 }
@@ -718,8 +1039,8 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1px solid var(--borde);
 }
 
@@ -739,10 +1060,18 @@
     cursor: pointer;
     font-weight: 950;
     color: var(--azulMarino);
+    transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
 }
 
 .btnGhost:hover {
     filter: brightness(.99);
+}
+
+.btnGhost:focus-visible,
+.btnDanger:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+    transform: translateY(-1px);
 }
 
 .btnDanger {
@@ -753,6 +1082,27 @@
     cursor: pointer;
     font-weight: 950;
     color: #7f1d1d;
+    transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
+}
+
+.btnIconOnly {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.btnPay {
+    border-color: rgba(34, 197, 94, .28);
+    background: rgba(34, 197, 94, .10);
+    color: #14532d;
+}
+
+.btnPay:hover {
+    border-color: rgba(34, 197, 94, .45);
 }
 
 .btnDanger:hover {
@@ -856,6 +1206,11 @@
     cursor: pointer;
     font-weight: 950;
     color: var(--azulMarino);
+}
+
+.modalClose:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
 }
 
 .modalBody {
@@ -990,8 +1345,8 @@
 }
 
 .toastOk .toastIcon {
-    border: 1px solid rgba(31, 190, 106, .25);
-    background: rgba(31, 190, 106, .10);
+    border: 1px solid rgba(34, 197, 94, .25);
+    background: rgba(34, 197, 94, .10);
     color: #14532d;
 }
 

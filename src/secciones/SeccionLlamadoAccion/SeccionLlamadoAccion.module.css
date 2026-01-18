@@ -1,4 +1,5 @@
 .seccion {
+    animation: fadeUp 0.5s ease both;
   padding: 0;
 }
 
@@ -8,6 +9,7 @@
   border: 1px solid var(--borde);
   background: linear-gradient(180deg, var(--blanco), var(--superficie));
   box-shadow: var(--sombra-sm);
+  transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
 
   display: flex;
   align-items: center;
@@ -15,11 +17,17 @@
   gap: 14px;
   flex-wrap: wrap;
 }
+.box:hover{
+  border-color: var(--bordeHover);
+  box-shadow: var(--sombra-md);
+  transform: translateY(-1px);
+}
 
 .titulo {
   margin: 0 0 6px;
   font-size: 22px;
   font-weight: 900;
+  color: var(--azulMarino);
 }
 
 .sub {

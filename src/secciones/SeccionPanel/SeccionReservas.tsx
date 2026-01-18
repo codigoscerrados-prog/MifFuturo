@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "./SeccionReservas.module.css";
 import { apiFetch } from "@/lib/api";
 
@@ -139,6 +140,13 @@ function statusBadgeClass(st: PaymentStatus) {
     return cn(styles.statusBadge, styles.statusPending);
 }
 
+function eventCardClass(st: PaymentStatus) {
+    if (st === "pagada") return cn(styles.eventCard, styles.eventOk);
+    if (st === "parcial") return cn(styles.eventCard, styles.eventWarn);
+    if (st === "cancelada") return cn(styles.eventCard, styles.eventOff);
+    return cn(styles.eventCard, styles.eventPending);
+}
+
 export default function PanelReservasPropietario({ token }: { token: string }) {
     const [canchas, setCanchas] = useState<Cancha[]>([]);
     const [currentMonth, setCurrentMonth] = useState(() => {
@@ -160,6 +168,8 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
 
     const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
     const toastTimerRef = useRef<number | null>(null);
+
+    const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
 
     const [formCourtId, setFormCourtId] = useState<number | null>(null);
     const [formDate, setFormDate] = useState<string>("");
@@ -254,6 +264,11 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
         })();
     }, [fetchCanchas]);
 
+    useEffect(() => {
+        if (typeof document === "undefined") return;
+        setSidebarSlot(document.getElementById("panel-reservas-calendar-slot"));
+    }, []);
+
     // ✅ carga mes (1 llamada) y llena dayCache por fecha
     useEffect(() => {
         (async () => {
@@ -326,15 +341,15 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
         return cells;
     }, [currentMonth]);
 
-    const bookedBySlotForSelectedCourt = useMemo(() => {
-        const map = new Map<string, Reserva>();
-        if (!selectedCourtId) return map;
+    const reservasByCourtAndSlot = useMemo(() => {
+        const map = new Map<number, Map<string, Reserva>>();
         for (const r of dayActiveReservations) {
-            if (r.cancha_id !== selectedCourtId) continue;
-            map.set(parseHHMM(r.start_at), r);
+            const slot = parseHHMM(r.start_at);
+            if (!map.has(r.cancha_id)) map.set(r.cancha_id, new Map());
+            map.get(r.cancha_id)!.set(slot, r);
         }
         return map;
-    }, [dayActiveReservations, selectedCourtId]);
+    }, [dayActiveReservations]);
 
     const reservationsForList = useMemo(() => {
         return dayActiveReservations
@@ -362,6 +377,12 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
         setFormPhone("");
         setFormNotes("");
         setModalOpen(true);
+    }
+
+    function openNewReservationForCourt(courtId: number, slot?: string) {
+        setSelectedCourtId(courtId);
+        openNewReservation(slot);
+        setFormCourtId(courtId);
     }
 
     function openEditReservation(r: Reserva) {
@@ -490,8 +511,107 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
     const now = new Date();
     const isSelectedToday = selectedDateStr === todayStr;
 
+    const calendarNode = (
+        <section className={cn(styles.card, styles.cardCalendar)}>
+            <div className={styles.calendarTop}>
+                <button type="button" onClick={() => changeMonth(-1)} className={styles.iconBtn} aria-label="Mes anterior">
+                    <svg className={styles.icon} viewBox="0 0 24 24">
+                        <path d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <div className={styles.calendarTitle}>
+                    {monthYearLabel}
+                    {loadingMonth ? <span className={styles.loadingTag}> (cargando)</span> : null}
+                </div>
+
+                <button type="button" onClick={() => changeMonth(1)} className={styles.iconBtn} aria-label="Mes siguiente">
+                    <svg className={styles.icon} viewBox="0 0 24 24">
+                        <path d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <div className={styles.weekdays}>
+                <span className={styles.weekday}>Dom</span>
+                <span className={styles.weekday}>Lun</span>
+                <span className={styles.weekday}>Mar</span>
+                <span className={styles.weekday}>Mie</span>
+                <span className={styles.weekday}>Jue</span>
+                <span className={styles.weekday}>Vie</span>
+                <span className={styles.weekday}>Sab</span>
+            </div>
+
+            <div className={styles.calendarGrid}>
+                {calendarCells.map((cell, idx) => {
+                    if (cell.type === "empty") return <div key={`e-${idx}`} className={styles.calendarEmpty} />;
+
+                    const ds = cell.dateStr;
+                    const dots = dayDots(ds);
+                    const isToday = isTodayDateStr(ds);
+                    const isSelected = isSelectedDateStr(ds);
+
+                    return (
+                        <button
+                            key={ds}
+                            type="button"
+                            className={cn(
+                                styles.calendarDay,
+                                isToday && styles.calendarDayToday,
+                                isSelected && styles.calendarDaySelected
+                            )}
+                            onClick={() => selectDateByStr(ds)}
+                            aria-pressed={isSelected}
+                        >
+                            <span className={styles.calendarDayNum}>{cell.day}</span>
+
+                            {dots.length ? (
+                                <span className={styles.dots} aria-hidden="true">
+                                    {dots.map((cset, i) => (
+                                        <span
+                                            key={`${ds}-dot-${i}`}
+                                            className={styles.dot}
+                                            style={{ backgroundColor: cset.dotSoft }}
+                                        />
+                                    ))}
+                                </span>
+                            ) : null}
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className={styles.divisor} />
+
+            <div className={styles.legendTop}>
+                <h3 className={styles.legendTitle}>Canchas</h3>
+                <span className={styles.legendHint}>Colores por cancha</span>
+            </div>
+
+            {canchasActivas.length === 0 ? (
+                <div className={styles.legendEmpty}>Aun no tienes canchas registradas.</div>
+            ) : (
+                <div className={styles.legendList}>
+                    {canchasActivas.map((c) => {
+                        const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
+                        return (
+                            <div key={c.id} className={styles.legendItem}>
+                                <div className={styles.legendLeft}>
+                                    <span className={styles.legendDot} style={{ backgroundColor: cs.dot }} />
+                                    <span className={styles.legendName}>{c.nombre}</span>
+                                </div>
+                                <span className={styles.legendPrice}>S/ {Number(c.precio_hora || 0).toFixed(0)}/h</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </section>
+    );
+
     return (
         <div className={styles.shell}>
+            {sidebarSlot ? createPortal(calendarNode, sidebarSlot) : null}
             {/* Header */}
             <div className={styles.header}>
                 <div>
@@ -522,240 +642,13 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
             {error ? <div className={styles.alertError}>{error}</div> : null}
 
             {/* Main Grid */}
-            <div className={styles.mainGrid}>
-                {/* Calendar */}
-                <section className={cn(styles.card, styles.cardCalendar)}>
-                    <div className={styles.calendarTop}>
-                        <button type="button" onClick={() => changeMonth(-1)} className={styles.iconBtn} aria-label="Mes anterior">
-                            <svg className={styles.icon} viewBox="0 0 24 24">
-                                <path d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
+            <div className={cn(styles.mainGrid, sidebarSlot && styles.mainGridWide)}>
+                {!sidebarSlot ? calendarNode : null}
 
-                        <div className={styles.calendarTitle}>
-                            {monthYearLabel}
-                            {loadingMonth ? <span className={styles.loadingTag}> (cargando)</span> : null}
-                        </div>
-
-                        <button type="button" onClick={() => changeMonth(1)} className={styles.iconBtn} aria-label="Mes siguiente">
-                            <svg className={styles.icon} viewBox="0 0 24 24">
-                                <path d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div className={styles.weekdays}>
-                        <span className={styles.weekday}>Dom</span>
-                        <span className={styles.weekday}>Lun</span>
-                        <span className={styles.weekday}>Mar</span>
-                        <span className={styles.weekday}>Mié</span>
-                        <span className={styles.weekday}>Jue</span>
-                        <span className={styles.weekday}>Vie</span>
-                        <span className={styles.weekday}>Sáb</span>
-                    </div>
-
-                    <div className={styles.calendarGrid}>
-                        {calendarCells.map((cell, idx) => {
-                            if (cell.type === "empty") return <div key={`e-${idx}`} className={styles.calendarEmpty} />;
-
-                            const ds = cell.dateStr;
-                            const dots = dayDots(ds);
-                            const isToday = isTodayDateStr(ds);
-                            const isSelected = isSelectedDateStr(ds);
-
-                            return (
-                                <button
-                                    key={ds}
-                                    type="button"
-                                    className={cn(
-                                        styles.calendarDay,
-                                        isToday && styles.calendarDayToday,
-                                        isSelected && styles.calendarDaySelected
-                                    )}
-                                    onClick={() => selectDateByStr(ds)}
-                                    aria-pressed={isSelected}
-                                >
-                                    <span className={styles.calendarDayNum}>{cell.day}</span>
-
-                                    {dots.length ? (
-                                        <span className={styles.dots} aria-hidden="true">
-                                            {dots.map((cset, i) => (
-                                                <span
-                                                    key={`${ds}-dot-${i}`}
-                                                    className={styles.dot}
-                                                    style={{ backgroundColor: cset.dotSoft }}
-                                                />
-                                            ))}
-                                        </span>
-                                    ) : null}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className={styles.divisor} />
-
-                    <div className={styles.legendTop}>
-                        <h3 className={styles.legendTitle}>Canchas</h3>
-                        <span className={styles.legendHint}>Colores por cancha</span>
-                    </div>
-
-                    {canchasActivas.length === 0 ? (
-                        <div className={styles.legendEmpty}>Aún no tienes canchas registradas.</div>
-                    ) : (
-                        <div className={styles.legendList}>
-                            {canchasActivas.map((c) => {
-                                const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
-                                return (
-                                    <div key={c.id} className={styles.legendItem}>
-                                        <div className={styles.legendLeft}>
-                                            <span className={styles.legendDot} style={{ backgroundColor: cs.dot }} />
-                                            <span className={styles.legendName}>{c.nombre}</span>
-                                        </div>
-                                        <span className={styles.legendPrice}>S/ {Number(c.precio_hora || 0).toFixed(0)}/h</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </section>
-
-                {/* Agenda */}
-                <section className={cn(styles.card, styles.cardSchedule)}>
-                    <div className={styles.cardTop}>
-                        <div>
-                            <h2 className={styles.cardTitle}>Agenda del día</h2>
-                            <p className={styles.cardSubtitle}>
-                                {formatDisplayDate(selectedDate)}
-                                {loadingDay ? <span className={styles.loadingTag}> (cargando)</span> : null}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className={styles.courtTabs}>
-                        {canchasActivas.map((c) => {
-                            const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
-                            const active = selectedCourtId === c.id;
-
-                            return (
-                                <button
-                                    key={c.id}
-                                    type="button"
-                                    className={cn(styles.canchaTab, active && styles.canchaTabActive)}
-                                    onClick={() => setSelectedCourtId(c.id)}
-                                    style={{
-                                        borderColor: active ? cs.border : undefined,
-                                        background: active ? cs.softBg : undefined,
-                                        color: active ? cs.text : undefined,
-                                    }}
-                                    aria-pressed={active}
-                                    title={c.nombre}
-                                >
-                                    <span className={styles.canchaDot} style={{ backgroundColor: cs.dot }} />
-                                    <span className={styles.canchaLabel}>{c.nombre}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className={styles.agendaScroll}>
-                        {TIME_SLOTS.map((slot) => {
-                            const res = bookedBySlotForSelectedCourt.get(slot) || null;
-                            const slotHour = Number(slot.split(":")[0] || 0);
-                            const isPast = isSelectedToday && slotHour <= now.getHours();
-
-                            if (res) {
-                                const parsed = parseNotas(res.notas);
-                                const st = (res.payment_status || res.estado || "pendiente") as PaymentStatus;
-                                const badge = statusBadgeClass(st);
-
-                                return (
-                                    <div key={slot} className={cn(styles.timeSlot, styles.slotBooked)}>
-                                        <div className={styles.slotRow}>
-                                            <div className={styles.slotLeft}>
-                                                <span className={styles.slotHour}>{slot}</span>
-                                                <div className={styles.slotMeta}>
-                                                    <p className={styles.slotName}>{parsed.client_name || "Reserva"}</p>
-                                                    <p className={styles.slotPhone}>{parsed.client_phone || "—"}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className={styles.actions}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.iconBtn}
-                                                    onClick={() => openEditReservation(res)}
-                                                    title="Editar"
-                                                >
-                                                    <svg className={styles.icon} viewBox="0 0 24 24">
-                                                        <path d="M15.232 5.232l3.536 3.536M16.732 3.732a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                    </svg>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    className={cn(styles.iconBtn, styles.iconBtnDanger)}
-                                                    onClick={() => requestDelete(res)}
-                                                    title="Cancelar"
-                                                >
-                                                    <svg className={styles.icon} viewBox="0 0 24 24">
-                                                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className={styles.slotBottom}>
-                                            <span className={badge}>
-                                                {statusLabel(st)} • S/ {Number(res.total_amount || 0).toFixed(0)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            if (isPast) {
-                                return (
-                                    <div key={slot} className={cn(styles.timeSlot, styles.slotPast)}>
-                                        <div className={styles.slotRow}>
-                                            <div className={styles.slotLeft}>
-                                                <span className={styles.slotHour}>{slot}</span>
-                                                <span className={styles.slotFreeHint}>Horario pasado</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <button
-                                    key={slot}
-                                    type="button"
-                                    className={cn(styles.timeSlot, styles.slotFree)}
-                                    onClick={() => openNewReservation(slot)}
-                                >
-                                    <div className={styles.slotRow}>
-                                        <div className={styles.slotLeft}>
-                                            <span className={styles.slotHour}>{slot}</span>
-                                            <span className={styles.slotFreeHint}>Disponible</span>
-                                        </div>
-
-                                        <span className={styles.slotPlus} aria-hidden="true">
-                                            <svg className={styles.icon} viewBox="0 0 24 24">
-                                                <path d="M12 5v14M5 12h14" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </section>
-
-                {/* Lista del día */}
+                {/* Lista del dÇða */}
                 <section className={cn(styles.card, styles.cardList)}>
                     <div className={styles.listTop}>
-                        <h2 className={styles.cardTitle}>Reservas del día</h2>
+                        <h2 className={styles.cardTitle}>Reservas del dÇða</h2>
                         <span className={styles.counter}>{reservationsForList.length}</span>
                     </div>
 
@@ -767,7 +660,7 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
                                         <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
-                                <p className={styles.emptyText}>No hay reservas para este día</p>
+                                <p className={styles.emptyText}>No hay reservas para este dia</p>
                             </div>
                         ) : (
                             reservationsForList.map((res) => {
@@ -777,7 +670,14 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
                                 const badge = statusBadgeClass(st);
 
                                 return (
-                                    <div key={res.id} className={styles.reservationCard}>
+                                    <div
+                                        key={res.id}
+                                        className={styles.reservationCard}
+                                        style={{
+                                            ["--res-accent" as any]: cs.dot,
+                                            ["--res-accent-soft" as any]: cs.dotSoft,
+                                        }}
+                                    >
                                         <div className={styles.resTop}>
                                             <div className={styles.resCourt}>
                                                 <span className={styles.resDot} style={{ backgroundColor: cs.dot }} />
@@ -790,21 +690,42 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
                                         </div>
 
                                         <h4 className={styles.resName}>{parsed.client_name || "Reserva"}</h4>
-                                        <p className={styles.resPhone}>{parsed.client_phone || "—"}</p>
+                                        <p className={styles.resPhone}>{parsed.client_phone || "-"}</p>
 
                                         {parsed.notes ? <p className={styles.resNotes}>"{parsed.notes}"</p> : null}
 
                                         <div className={styles.resBottom}>
                                             <span className={badge}>
-                                                {statusLabel(st)} • S/ {Number(res.total_amount || 0).toFixed(0)}
+                                                {statusLabel(st)} - S/ {Number(res.total_amount || 0).toFixed(0)}
                                             </span>
 
                                             <div className={styles.resActions}>
-                                                <button type="button" className={styles.btnGhost} onClick={() => openEditReservation(res)}>
-                                                    Editar
+                                                <button
+                                                    type="button"
+                                                    className={cn(styles.btnGhost, styles.btnPay, styles.btnIconOnly)}
+                                                    onClick={() => openEditReservation(res)}
+                                                    aria-label="Cobrar"
+                                                    title="Cobrar"
+                                                >
+                                                    <i className="bi bi-cash-coin" aria-hidden="true"></i>
                                                 </button>
-                                                <button type="button" className={styles.btnDanger} onClick={() => requestDelete(res)}>
-                                                    Cancelar
+                                                <button
+                                                    type="button"
+                                                    className={cn(styles.btnGhost, styles.btnIconOnly)}
+                                                    onClick={() => openEditReservation(res)}
+                                                    aria-label="Editar"
+                                                    title="Editar"
+                                                >
+                                                    <i className="bi bi-pencil" aria-hidden="true"></i>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={cn(styles.btnDanger, styles.btnIconOnly)}
+                                                    onClick={() => requestDelete(res)}
+                                                    aria-label="Cancelar"
+                                                    title="Cancelar"
+                                                >
+                                                    <i className="bi bi-trash" aria-hidden="true"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -814,6 +735,145 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
                         )}
                     </div>
                 </section>
+
+                {/* Agenda */}
+                <section className={styles.cardSchedule}>
+                    <div className={styles.cardTop}>
+                        <div>
+                            <h2 className={styles.cardTitle}>Agenda del dia</h2>
+                            <p className={styles.cardSubtitle}>
+                                {formatDisplayDate(selectedDate)}
+                                {loadingDay ? <span className={styles.loadingTag}> (cargando)</span> : null}
+                            </p>
+                        </div>
+
+                        <div className={styles.viewTabs} aria-hidden="true">
+                            <button type="button" className={cn(styles.viewBtn, styles.viewBtnActive)}>Hoy</button>
+                            <button type="button" className={styles.viewBtn}>Semana</button>
+                            <button type="button" className={styles.viewBtn}>Mes</button>
+                        </div>
+                    </div>
+
+                    {canchasActivas.length === 0 ? (
+                        <div className={styles.timelineEmpty}>Aun no tienes canchas registradas.</div>
+                    ) : (
+                        <div className={styles.agendaScroll}>
+                            <div
+                                className={styles.timelineGrid}
+                                style={{ ["--court-count" as any]: Math.max(canchasActivas.length, 1) }}
+                            >
+                                <div className={styles.timelineHeaderRow}>
+                                    <div className={styles.timelineCorner}>Hora</div>
+                                    {canchasActivas.map((c) => {
+                                        const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
+                                        const active = selectedCourtId === c.id;
+                                        return (
+                                            <div
+                                                key={c.id}
+                                                className={cn(styles.timelineHeaderCell, active && styles.timelineHeaderActive)}
+                                                style={{ borderColor: cs.border }}
+                                            >
+                                                <span className={styles.timelineDot} style={{ backgroundColor: cs.dot }} />
+                                                <span className={styles.timelineLabel}>{c.nombre}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className={styles.timelineBody}>
+                                    {TIME_SLOTS.map((slot) => {
+                                        const slotHour = Number(slot.split(":")[0] || 0);
+                                        const isPast = isSelectedToday && slotHour <= now.getHours();
+
+                                        return (
+                                            <div key={slot} className={styles.timelineRow}>
+                                                <div className={styles.timeCell}>{slot}</div>
+                                                {canchasActivas.map((c) => {
+                                                    const res = reservasByCourtAndSlot.get(c.id)?.get(slot) || null;
+
+                                                    if (res) {
+                                                        const parsed = parseNotas(res.notas);
+                                                        const st = (res.payment_status || res.estado || "pendiente") as PaymentStatus;
+                                                        return (
+                                                            <div key={`${slot}-${c.id}`} className={styles.slotCell}>
+                                                                <div className={eventCardClass(st)}>
+                                                                    <div className={styles.eventTop}>
+                                                                        <div className={styles.eventTitle}>
+                                                                            <span className={styles.eventName}>{parsed.client_name || "Reserva"}</span>
+                                                                            <span className={styles.eventTime}>
+                                                                                {parseHHMM(res.start_at)} - {parseHHMM(res.end_at)}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className={styles.eventActions}>
+                                                                            <button
+                                                                                type="button"
+                                                                                className={styles.iconBtn}
+                                                                                onClick={() => openEditReservation(res)}
+                                                                                title="Editar"
+                                                                            >
+                                                                                <svg className={styles.icon} viewBox="0 0 24 24">
+                                                                                    <path d="M15.232 5.232l3.536 3.536M16.732 3.732a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                                                </svg>
+                                                                            </button>
+
+                                                                            <button
+                                                                                type="button"
+                                                                                className={cn(styles.iconBtn, styles.iconBtnDanger)}
+                                                                                onClick={() => requestDelete(res)}
+                                                                                title="Cancelar"
+                                                                            >
+                                                                                <svg className={styles.icon} viewBox="0 0 24 24">
+                                                                                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                                                                                </svg>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className={styles.eventMeta}>
+                                                                        <span className={styles.eventPhone}>{parsed.client_phone || "-"}</span>
+                                                                        <span className={statusBadgeClass(st)}>
+                                                                            {statusLabel(st)} - S/ {Number(res.total_amount || 0).toFixed(0)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    if (isPast) {
+                                                        return (
+                                                            <div key={`${slot}-${c.id}`} className={cn(styles.slotCell, styles.slotCellPast)}>
+                                                                <span className={styles.slotFreeHint}>Horario pasado</span>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div key={`${slot}-${c.id}`} className={styles.slotCell}>
+                                                            <button
+                                                                type="button"
+                                                                className={styles.slotButton}
+                                                                onClick={() => openNewReservationForCourt(c.id, slot)}
+                                                            >
+                                                                <span className={styles.slotFreeHint}>Disponible</span>
+                                                                <span className={styles.slotPlus} aria-hidden="true">
+                                                                    <svg className={styles.icon} viewBox="0 0 24 24">
+                                                                        <path d="M12 5v14M5 12h14" />
+                                                                    </svg>
+                                                                </span>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </section>
+
+                
             </div>
 
             {/* Modal Crear/Editar */}

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "@/estilos/globales.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+
 
 import BarraNavegacion from "@/componentes/BarraNavegacion/BarraNavegacion";
 import PiePagina from "@/componentes/PiePagina/PiePagina";

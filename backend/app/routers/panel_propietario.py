@@ -14,7 +14,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from app.core.deps import get_db, require_role, get_usuario_actual
-from app.modelos.modelos import Complejo, Cancha, CanchaImagen, Reserva
+from app.modelos.modelos import Complejo, Cancha, CanchaImagen, Reserva, Plan, Suscripcion
 from app.esquemas.esquemas import (
     ComplejoCrear,
     ComplejoActualizar,
@@ -45,6 +45,30 @@ ALLOWED = {
 
 def check_owner(u, owner_id: int | None):
     return u.role == "admin" or (owner_id is not None and owner_id == u.id)
+
+def _plan_actual(db: Session, user_id: int) -> Plan | None:
+    fila = (
+        db.query(Suscripcion, Plan)
+        .join(Plan, Plan.id == Suscripcion.plan_id)
+        .filter(Suscripcion.user_id == user_id)
+        .order_by(Suscripcion.inicio.desc())
+        .first()
+    )
+    if fila:
+        return fila[1]
+    return db.query(Plan).filter(Plan.id == 1).first()
+
+
+def _limite_complejos(plan: Plan | None) -> int:
+    if plan and plan.limite_canchas and int(plan.limite_canchas) > 0:
+        return int(plan.limite_canchas)
+    codigo = (plan.codigo if plan else "") or ""
+    nombre = (plan.nombre if plan else "") or ""
+    codigo = codigo.lower()
+    nombre = nombre.lower()
+    if "pro" in codigo or "premium" in codigo or "pro" in nombre or "premium" in nombre:
+        return 2
+    return 1
 
 
 def owner_filter_reservas(q, u):
@@ -123,6 +147,15 @@ def obtener_complejo(complejo_id: int, db: Session = Depends(get_db), u=Depends(
     dependencies=[Depends(require_role("propietario", "admin"))],
 )
 def crear_complejo(payload: ComplejoCrear, db: Session = Depends(get_db), u=Depends(get_usuario_actual)):
+    if u.role != "admin":
+        plan = _plan_actual(db, u.id)
+        limite = _limite_complejos(plan)
+        total = db.query(Complejo).filter(Complejo.owner_id == u.id).count()
+        if total >= limite:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Has alcanzado el limite de complejos de tu plan ({limite}).",
+            )
     c = Complejo(**payload.model_dump(exclude_none=True), owner_id=u.id, created_by=u.id)
     db.add(c)
     db.commit()

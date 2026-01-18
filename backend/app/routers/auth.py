@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import secrets
+import json
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.deps import get_db, get_usuario_actual
+from app.core.config import settings
 from app.core.seguridad import hash_password, verify_password, crear_token
 from app.core.email import send_email_code
 from app.modelos.modelos import User, Plan, Suscripcion, LoginOtp
@@ -23,6 +28,24 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 class PasswordVerifyIn(BaseModel):
     password: str
+
+
+def _post_form(url: str, data: dict) -> dict:
+    body = urlencode(data).encode("utf-8")
+    req = Request(url, data=body, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    with urlopen(req, timeout=15) as resp:
+        payload = resp.read().decode("utf-8")
+    return json.loads(payload)
+
+
+def _get_json(url: str, headers: dict | None = None) -> dict:
+    req = Request(url, method="GET")
+    for k, v in (headers or {}).items():
+        req.add_header(k, v)
+    with urlopen(req, timeout=15) as resp:
+        payload = resp.read().decode("utf-8")
+    return json.loads(payload)
 
 
 @router.post("/register", response_model=UsuarioOut)
@@ -71,6 +94,121 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 
     token = crear_token(u.id, u.role)
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/google/login")
+def google_login():
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_REDIRECT_URI:
+        raise HTTPException(status_code=500, detail="Google OAuth no configurado")
+
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "prompt": "select_account",
+    }
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+    return RedirectResponse(url)
+
+
+@router.get("/google/callback")
+def google_callback(
+    code: str = Query(...),
+    mode: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET or not settings.GOOGLE_REDIRECT_URI:
+        raise HTTPException(status_code=500, detail="Google OAuth no configurado")
+
+    token_data = _post_form(
+        "https://oauth2.googleapis.com/token",
+        {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        },
+    )
+    access_token = token_data.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="No se pudo validar Google")
+
+    userinfo = _get_json(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    email = (userinfo.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email no disponible")
+
+    u = db.query(User).filter(User.email == email).first()
+    created = False
+    if not u:
+        created = True
+        first_name = (userinfo.get("given_name") or "Usuario").strip() or "Usuario"
+        last_name = (userinfo.get("family_name") or "Google").strip() or "Google"
+        u = User(
+            role="usuario",
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            hashed_password=hash_password(secrets.token_hex(16)),
+            avatar_url=userinfo.get("picture"),
+            phone="999999999",
+        )
+
+        try:
+            db.add(u)
+            db.flush()
+
+            free_plan = (
+                db.query(Plan).filter(Plan.id == 1).first()
+                or db.query(Plan).filter(Plan.codigo == "free").first()
+            )
+            if not free_plan:
+                raise HTTPException(status_code=500, detail="No existe el plan FREE en la tabla planes")
+
+            s = Suscripcion(user_id=u.id, plan_id=free_plan.id, estado="activa")
+            db.add(s)
+
+            db.commit()
+            db.refresh(u)
+        except HTTPException:
+            db.rollback()
+            raise
+        except Exception:
+            db.rollback()
+            raise
+    else:
+        actualizado = False
+        given = (userinfo.get("given_name") or "").strip()
+        family = (userinfo.get("family_name") or "").strip()
+        if given and not (u.first_name or "").strip():
+            u.first_name = given
+            actualizado = True
+        if family and not (u.last_name or "").strip():
+            u.last_name = family
+            actualizado = True
+        if not (u.phone or "").strip():
+            u.phone = "999999999"
+            actualizado = True
+        if userinfo.get("picture") and not (u.avatar_url or "").strip():
+            u.avatar_url = userinfo.get("picture")
+            actualizado = True
+        if actualizado:
+            db.add(u)
+            db.commit()
+            db.refresh(u)
+
+    token = crear_token(u.id, u.role)
+    if mode == "json":
+        return {"access_token": token, "token_type": "bearer", "needs_profile": created}
+
+    frontend = settings.FRONTEND_ORIGIN.rstrip("/")
+    redirect_url = f"{frontend}/auth/callback/google?token={token}&needs_profile={'1' if created else '0'}"
+    return RedirectResponse(redirect_url)
 
 
 @router.post("/otp/request")

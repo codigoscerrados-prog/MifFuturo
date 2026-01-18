@@ -14,9 +14,6 @@
 .fondoB{ background: var(--superficie); }
 .fondoC{ background: var(--superficie2); }
 
-.espaciadoSeccion{
-  padding: clamp(28px, 4vw, 56px) 0;
-}
 
 /* Tarjeta */
 .tarjeta{
@@ -24,6 +21,12 @@
   background: var(--blanco);
   border-radius: var(--radio-xl);
   box-shadow: var(--sombra-sm);
+  transition: transform var(--transicion-base), box-shadow var(--transicion-base), border-color var(--transicion-fast);
+}
+.tarjeta:hover{
+  border-color: var(--bordeHover);
+  box-shadow: var(--sombra-md);
+  transform: translateY(-2px);
 }
 
 /* Botones globales */
@@ -35,7 +38,7 @@
 
   height: 44px;
   padding: 0 16px;
-  border-radius: 999px;
+  border-radius: var(--radio-full);
 
   border: 1px solid var(--borde);
   background: var(--blanco);
@@ -46,26 +49,83 @@
   cursor: pointer;
 
   box-shadow: var(--sombra-sm);
-  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+  transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), background var(--transicion-fast), border-color var(--transicion-fast);
 }
 
 .boton:hover{
   transform: translateY(-1px);
-  box-shadow: var(--sombra);
+  box-shadow: var(--sombra-md);
   border-color: var(--bordeFuerte);
 }
 
 .boton:active{ transform: translateY(0); }
 
 .botonPrimario{
-  background: var(--azulMarino);
-  border-color: var(--azulMarino);
-  color: var(--blanco);
-  box-shadow: 0 18px 55px rgba(11, 22, 48, .22);
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #7c3aed 100%);
+  color: #fff;
+  font-weight: 850;
+  letter-spacing: .3px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.24), 0 2px 10px rgba(37, 99, 235, 0.14);
+  transition: transform 220ms ease, box-shadow 240ms ease, filter 240ms ease;
 }
 .botonPrimario:hover{
-  background: var(--azulMarino2);
-  border-color: var(--azulMarino2);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.30), 0 4px 14px rgba(37, 99, 235, 0.18);
+  filter: brightness(1.02);
+}
+
+/* Bootstrap primary buttons -> estilo loginBtn */
+.btn.btn-primary,
+.btn-primary{
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #7c3aed 100%);
+  color: #fff;
+  font-weight: 850;
+  letter-spacing: .3px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.24), 0 2px 10px rgba(37, 99, 235, 0.14);
+  transition: transform 220ms ease, box-shadow 240ms ease, filter 240ms ease;
+}
+
+.btn.btn-primary::before,
+.btn-primary::before{
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  transform: rotate(25deg);
+  animation: shine 3s infinite;
+  pointer-events: none;
+}
+
+.btn.btn-primary:hover,
+.btn-primary:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.30), 0 4px 14px rgba(37, 99, 235, 0.18);
+  filter: brightness(1.02);
+}
+
+.btn.btn-primary:active,
+.btn-primary:active{
+  transform: translateY(0);
+}
+
+@keyframes shine{
+  0%{ transform: translateX(-40%) translateY(-40%) rotate(25deg); }
+  100%{ transform: translateX(40%) translateY(40%) rotate(25deg); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .btn.btn-primary::before,
+  .btn-primary::before{
+    animation: none;
+  }
 }
 
 /* Alias por compatibilidad con lo que ya venías usando */
@@ -75,7 +135,7 @@
   box-shadow: none;
 }
 .botonNeon:hover{
-  background: var(--superficie);
+  background: var(--superficie2);
   border-color: var(--bordeFuerte);
 }
 
@@ -84,14 +144,14 @@
   height: 46px;
   width: 100%;
   padding: 0 12px;
-  border-radius: 14px;
+  border-radius: var(--radio-md);
   border: 1px solid var(--borde);
   background: var(--blanco);
   color: var(--texto);
   outline: none;
-  transition: border-color .12s ease, box-shadow .12s ease;
+  transition: border-color var(--transicion-fast), box-shadow var(--transicion-fast), background var(--transicion-fast);
 }
 .input:focus, .select:focus{
   border-color: rgba(37, 99, 235, .45);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, .10);
+  box-shadow: var(--sombra-glow);
 }

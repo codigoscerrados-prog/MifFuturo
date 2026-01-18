@@ -7,10 +7,14 @@ import { apiFetch } from "@/lib/api";
 type PerfilMe = {
     id: number;
     username?: string | null;
+    role?: string | null;
     email?: string | null;
     first_name?: string | null;
     last_name?: string | null;
     phone?: string | null;
+    business_name?: string | null;
+    player_position?: string | null;
+    jersey_number?: number | null;
     avatar_url?: string | null;
 };
 
@@ -46,12 +50,16 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
     const [plan, setPlan] = useState<PerfilPlan | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [phoneEditEnabled, setPhoneEditEnabled] = useState(false);
-    const [phoneDraft, setPhoneDraft] = useState("");
-    const [passwordDraft, setPasswordDraft] = useState("");
-    const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-    const [verifying, setVerifying] = useState(false);
-    const [savingPhone, setSavingPhone] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [draft, setDraft] = useState({
+        first_name: "",
+        last_name: "",
+        phone: "",
+        business_name: "",
+        player_position: "",
+        jersey_number: "",
+    });
 
     // Upload avatar
     const fileRef = useRef<HTMLInputElement | null>(null);
@@ -63,6 +71,7 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
     }, [me]);
 
     const email = useMemo(() => (me?.email || "").trim(), [me]);
+    const role = useMemo(() => props.role || me?.role || "usuario", [props.role, me]);
 
     const isPro = useMemo(() => {
         const pid = plan?.plan_id ?? null;
@@ -106,9 +115,16 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
     }, [cargar]);
 
     useEffect(() => {
-        if (phoneEditEnabled) return;
-        setPhoneDraft(me?.phone || "");
-    }, [me, phoneEditEnabled]);
+        if (editMode) return;
+        setDraft({
+            first_name: me?.first_name || "",
+            last_name: me?.last_name || "",
+            phone: me?.phone || "",
+            business_name: me?.business_name || "",
+            player_position: me?.player_position || "",
+            jersey_number: me?.jersey_number != null ? String(me.jersey_number) : "",
+        });
+    }, [me, editMode]);
 
     async function onPickAvatar(file?: File | null) {
         if (!file) return;
@@ -128,58 +144,55 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
         }
     }
 
-    async function solicitarEdicionTelefono() {
-        if (!passwordDraft.trim()) {
-            setError("Ingresa tu contraseña para editar.");
+    async function guardarPerfil() {
+        if (!me) return;
+
+        const jerseyText = draft.jersey_number.trim();
+        const jerseyNumber = jerseyText ? Number(jerseyText) : null;
+        if (jerseyText && !Number.isFinite(jerseyNumber)) {
+            setError("Dorsal inválido.");
+            return;
+        }
+        if (jerseyNumber != null && (jerseyNumber < 0 || jerseyNumber > 99)) {
+            setError("Dorsal debe estar entre 0 y 99.");
             return;
         }
 
         try {
-            setVerifying(true);
-            setError(null);
-            await apiFetch("/auth/verify-password", {
-                token,
-                method: "POST",
-                body: JSON.stringify({ password: passwordDraft }),
-            });
-            setPhoneEditEnabled(true);
-            setShowPasswordPrompt(false);
-            setPasswordDraft("");
-            setPhoneDraft(me?.phone || "");
-        } catch (e: any) {
-            setError(e?.message || "Contraseña incorrecta.");
-        } finally {
-            setVerifying(false);
-        }
-    }
-
-    async function guardarTelefono() {
-        if (!me) return;
-        try {
-            setSavingPhone(true);
+            setSaving(true);
             setError(null);
             const actualizado = await apiFetch<PerfilMe>("/perfil/me", {
                 token,
                 method: "PUT",
                 body: JSON.stringify({
-                    first_name: me.first_name || "",
-                    last_name: me.last_name || "",
-                    phone: phoneDraft.trim() || null,
+                    first_name: draft.first_name.trim(),
+                    last_name: draft.last_name.trim(),
+                    phone: draft.phone.trim() || null,
+                    business_name: draft.business_name.trim() || null,
+                    player_position: draft.player_position.trim() || null,
+                    jersey_number: jerseyNumber,
                 }),
             });
             setMe(actualizado);
-            setPhoneEditEnabled(false);
+            setEditMode(false);
             if (typeof onPerfilUpdated === "function") onPerfilUpdated(actualizado);
         } catch (e: any) {
-            setError(e?.message || "No se pudo guardar el teléfono.");
+            setError(e?.message || "No se pudo guardar el perfil.");
         } finally {
-            setSavingPhone(false);
+            setSaving(false);
         }
     }
 
-    function cancelarEdicionTelefono() {
-        setPhoneEditEnabled(false);
-        setPhoneDraft(me?.phone || "");
+    function cancelarEdicion() {
+        setEditMode(false);
+        setDraft({
+            first_name: me?.first_name || "",
+            last_name: me?.last_name || "",
+            phone: me?.phone || "",
+            business_name: me?.business_name || "",
+            player_position: me?.player_position || "",
+            jersey_number: me?.jersey_number != null ? String(me.jersey_number) : "",
+        });
     }
 
     return (
@@ -255,37 +268,47 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
 
                     {/* Datos */}
                     <div className={cn(styles.tarjeta, styles.stack)}>
-                        <div className={styles.between}>
-                            <div>
-                                <h3 className={styles.subtitulo}>Datos de tu cuenta</h3>
-                                <p className={styles.mutedSmall}>
-                                    Si el plan no coincide con tu cuenta PRO, revisa el correo arriba.
-                                </p>
-                            </div>
+                            <div className={styles.between}>
+                                <div>
+                                    <h3 className={styles.subtitulo}>Datos de tu cuenta</h3>
+                                    <p className={styles.mutedSmall}>
+                                        Si el plan no coincide con tu cuenta PRO, revisa el correo arriba.
+                                    </p>
+                                </div>
 
-                            {!phoneEditEnabled && !showPasswordPrompt ? (
-                                <button
-                                    type="button"
-                                    className={styles.btnGhost}
-                                    onClick={() => {
-                                        setShowPasswordPrompt(true);
-                                        setError(null);
-                                    }}
-                                >
-                                    Editar teléfono
-                                </button>
-                            ) : null}
-                        </div>
+                                {!editMode ? (
+                                    <button
+                                        type="button"
+                                        className={styles.btnGhost}
+                                        onClick={() => {
+                                            setEditMode(true);
+                                            setError(null);
+                                        }}
+                                    >
+                                        Editar
+                                    </button>
+                                ) : null}
+                            </div>
 
                         <div className={styles.formGrid}>
                             <div className={styles.campo}>
                                 <label className={styles.label}>Nombre</label>
-                                <input className={styles.input} value={me?.first_name || ""} readOnly />
+                                <input
+                                    className={styles.input}
+                                    value={editMode ? draft.first_name : (me?.first_name || "")}
+                                    onChange={(e) => setDraft({ ...draft, first_name: e.target.value })}
+                                    readOnly={!editMode}
+                                />
                             </div>
 
                             <div className={styles.campo}>
                                 <label className={styles.label}>Apellido</label>
-                                <input className={styles.input} value={me?.last_name || ""} readOnly />
+                                <input
+                                    className={styles.input}
+                                    value={editMode ? draft.last_name : (me?.last_name || "")}
+                                    onChange={(e) => setDraft({ ...draft, last_name: e.target.value })}
+                                    readOnly={!editMode}
+                                />
                             </div>
 
                             <div className={styles.campo}>
@@ -297,65 +320,68 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
                                 <label className={styles.label}>Teléfono</label>
                                 <input
                                     className={styles.input}
-                                    value={phoneEditEnabled ? phoneDraft : (me?.phone || "")}
-                                    onChange={(e) => setPhoneDraft(e.target.value)}
-                                    readOnly={!phoneEditEnabled}
+                                    value={editMode ? draft.phone : (me?.phone || "")}
+                                    onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+                                    readOnly={!editMode}
                                 />
                             </div>
+
+                            {role === "propietario" ? (
+                                <div className={styles.campo}>
+                                    <label className={styles.label}>Negocio</label>
+                                    <input
+                                        className={styles.input}
+                                        value={editMode ? draft.business_name : (me?.business_name || "")}
+                                        onChange={(e) => setDraft({ ...draft, business_name: e.target.value })}
+                                        readOnly={!editMode}
+                                    />
+                                </div>
+                            ) : null}
+
+                            {role === "usuario" ? (
+                                <div className={styles.campo}>
+                                    <label className={styles.label}>Posición</label>
+                                    <input
+                                        className={styles.input}
+                                        value={editMode ? draft.player_position : (me?.player_position || "")}
+                                        onChange={(e) => setDraft({ ...draft, player_position: e.target.value })}
+                                        readOnly={!editMode}
+                                    />
+                                </div>
+                            ) : null}
+
+                            {role === "usuario" ? (
+                                <div className={styles.campo}>
+                                    <label className={styles.label}>Dorsal</label>
+                                    <input
+                                        className={styles.input}
+                                        type="number"
+                                        min={0}
+                                        max={99}
+                                        value={editMode ? draft.jersey_number : (me?.jersey_number ?? "")}
+                                        onChange={(e) => setDraft({ ...draft, jersey_number: e.target.value })}
+                                        readOnly={!editMode}
+                                    />
+                                </div>
+                            ) : null}
                         </div>
 
-                        {showPasswordPrompt ? (
-                            <div className={styles.campo}>
-                                <label className={styles.label}>Contraseña</label>
-                                <input
-                                    className={styles.input}
-                                    type="password"
-                                    value={passwordDraft}
-                                    onChange={(e) => setPasswordDraft(e.target.value)}
-                                    placeholder="Ingresa tu contraseña"
-                                />
-
-                                <div className={styles.headerBtns}>
-                                    <button
-                                        type="button"
-                                        className={styles.btnPrimary}
-                                        onClick={solicitarEdicionTelefono}
-                                        disabled={verifying}
-                                    >
-                                        {verifying ? "Verificando..." : "Verificar"}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className={styles.btnGhost}
-                                        onClick={() => {
-                                            setShowPasswordPrompt(false);
-                                            setPasswordDraft("");
-                                        }}
-                                        disabled={verifying}
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </div>
-                        ) : null}
-
-                        {phoneEditEnabled ? (
+                        {editMode ? (
                             <div className={styles.headerBtns}>
                                 <button
                                     type="button"
                                     className={styles.btnPrimary}
-                                    onClick={guardarTelefono}
-                                    disabled={savingPhone}
+                                    onClick={guardarPerfil}
+                                    disabled={saving}
                                 >
-                                    {savingPhone ? "Guardando..." : "Guardar teléfono"}
+                                    {saving ? "Guardando..." : "Guardar"}
                                 </button>
 
                                 <button
                                     type="button"
                                     className={styles.btnGhost}
-                                    onClick={cancelarEdicionTelefono}
-                                    disabled={savingPhone}
+                                    onClick={cancelarEdicion}
+                                    disabled={saving}
                                 >
                                     Cancelar
                                 </button>

@@ -111,6 +111,7 @@ class CanchaOut(BaseModel):
     pasto: str
     precio_hora: float
     rating: float = 0
+    is_active: bool = True
 
     techada: bool = False
     iluminacion: bool = False
@@ -243,6 +244,31 @@ class ComplejoOut(BaseModel):
 
     is_active: bool
     owner_id: Optional[int] = None
+
+class ComplejoPublicOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    descripcion: Optional[str] = None
+    direccion: Optional[str] = None
+    distrito: Optional[str] = None
+    provincia: Optional[str] = None
+    departamento: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
+
+    techada: bool
+    iluminacion: bool
+    vestuarios: bool
+    estacionamiento: bool
+    cafeteria: bool
+
+    foto_url: Optional[str] = None
+    is_active: bool
+    owner_phone: Optional[str] = None
+
+    canchas: list[CanchaOut] = Field(default_factory=list)
 
 class ReservaCrear(BaseModel):
     model_config = ConfigDict(extra="ignore")

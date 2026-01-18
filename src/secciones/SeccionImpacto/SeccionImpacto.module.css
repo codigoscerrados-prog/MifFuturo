@@ -1,0 +1,135 @@
+.seccion {
+  padding: clamp(24px, 4vw, 56px) 0;
+  position: relative;
+  background: transparent;
+}
+
+.head {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto 18px;
+  text-align: center;
+}
+
+.titulo {
+  margin: 0;
+  font-size: clamp(26px, 3.2vw, 40px);
+  font-weight: 900;
+  color: var(--azulMarino);
+}
+
+.subtitulo {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.card {
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  box-shadow: var(--sombra-sm);
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transicion-base), box-shadow var(--transicion-base), border-color var(--transicion-fast);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("/fondo_lonuevo.jpg");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.32;
+  z-index: 0;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(248, 250, 252, 0.82));
+  z-index: 1;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--bordeHover);
+  box-shadow: var(--sombra-md);
+}
+
+.cardBody {
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+  align-content: center;
+  min-height: 120px;
+  position: relative;
+  z-index: 2;
+  justify-items: center;
+  text-align: center;
+}
+
+.valor {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: clamp(26px, 3.4vw, 40px);
+  font-weight: 900;
+  color: var(--azulMarino);
+  letter-spacing: 0.2px;
+  justify-content: center;
+}
+
+.valorTexto {
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 800;
+  color: var(--azulMarino);
+}
+
+.plus {
+  color: var(--verdeAcento);
+  font-weight: 900;
+  font-size: 0.9em;
+}
+
+.label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    border-color: rgba(148, 163, 184, 0.18);
+  }
+
+  .card::after {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.88));
+  }
+
+  .valor,
+  .valorTexto {
+    color: rgba(248, 250, 252, 0.94);
+  }
+
+  .label {
+    color: rgba(226, 232, 240, 0.72);
+  }
+
+  .titulo {
+    color: rgba(248, 250, 252, 0.94);
+  }
+
+  .subtitulo {
+    color: rgba(226, 232, 240, 0.72);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

@@ -1,4 +1,5 @@
 .seccion {
+    animation: fadeUp 0.5s ease both;
     padding: 0;
 }
 
@@ -27,6 +28,7 @@
     font-size: 13px;
     box-shadow: var(--sombra-sm);
     margin: 0 0 10px;
+    transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
 }
 
 .titulo {
@@ -71,6 +73,12 @@
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
     border-radius: var(--radio-xl);
     box-shadow: var(--sombra-sm);
+    transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
+}
+.kpi:hover{
+    border-color: var(--bordeHover);
+    box-shadow: var(--sombra-md);
+    transform: translateY(-1px);
 }
 
 .kpiLabel {
@@ -97,6 +105,12 @@
     border-radius: var(--radio-xl);
     box-shadow: var(--sombra-sm);
     padding: 14px;
+    transition: box-shadow var(--transicion-fast), border-color var(--transicion-fast), transform var(--transicion-fast);
+}
+.panel:hover{
+    border-color: var(--bordeHover);
+    box-shadow: var(--sombra-md);
+    transform: translateY(-1px);
 }
 
 .filtros {
@@ -140,6 +154,7 @@
     background: rgba(255, 255, 255, .95);
     color: var(--texto);
     outline: none;
+    transition: border-color var(--transicion-fast), box-shadow var(--transicion-fast), background var(--transicion-fast);
 }
 
 .input:focus,
@@ -197,6 +212,7 @@
     border-bottom: 1px solid var(--borde);
     color: rgba(11, 22, 48, .86);
     font-weight: 650;
+    transition: background var(--transicion-fast);
 }
 
 .tabla tbody tr:hover td {
@@ -245,6 +261,13 @@
     height: 36px;
     padding: 0 12px;
     border-radius: 12px;
+    transition: transform var(--transicion-fast), box-shadow var(--transicion-fast), border-color var(--transicion-fast);
+}
+
+.btnMini:focus-visible,
+.btnCerrar:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
 }
 
 .btnOff {
@@ -295,7 +318,8 @@
     border: 1px solid var(--borde);
     background: var(--blanco);
     border-radius: var(--radio-xl);
-    box-shadow: var(--sombra);
+    box-shadow: var(--sombra-lg);
+    animation: fadeUp 0.2s ease both;
 }
 
 .modalTop {
