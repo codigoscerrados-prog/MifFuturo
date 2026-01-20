@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./SeccionComplejos.module.css";
 import { apiFetch, apiUrl } from "@/lib/api";
@@ -29,6 +30,7 @@ type PerfilMe = {
 type Complejo = {
   id: number;
   nombre: string;
+  slug?: string | null;
   direccion: string;
   departamento: string; // ✅ se guarda como texto
   provincia: string; // ✅ lo usaremos como Provincia (nombre)
@@ -221,6 +223,12 @@ export default function SeccionComplejos({ token }: { token: string }) {
     () => complejos.filter((c) => c.is_active).length,
     [complejos]
   );
+
+  const publicUrl = useMemo(() => {
+    if (!seleccionado?.slug) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return origin ? `${origin}/${seleccionado.slug}` : `/${seleccionado.slug}`;
+  }, [seleccionado?.slug]);
 
   // =========================================================
   // ✅ UBIGEO: Fetch options (depa -> prov -> dist)
@@ -584,6 +592,18 @@ export default function SeccionComplejos({ token }: { token: string }) {
               {puedeCrear ? <option value="new">+ Crear nuevo complejo</option> : null}
             </select>
           </div>
+          {seleccionado && seleccionadoId !== "new" ? (
+            <div className={styles.actionsRow}>
+              <Link className="boton botonPrimario" href={`/panel/complejos/${seleccionado.id}/editar`}>
+                Administrar perfil publico
+              </Link>
+              {publicUrl ? (
+                <a className="boton botonNeon" href={publicUrl} target="_blank" rel="noreferrer">
+                  Ver perfil publico
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {cargando ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./SeccionLoNuevo.module.css";
 import { apiFetch } from "@/lib/api";
@@ -15,6 +16,7 @@ type ComplejoFeatures = {
 type Complejo = {
     id: number;
     nombre: string;
+    slug: string;
     zona?: string;
     departamento?: string;
     provincia?: string;
@@ -54,6 +56,7 @@ type CanchaOut = {
 type ComplejoApi = {
     id: number;
     nombre: string;
+    slug?: string | null;
     distrito?: string | null;
     provincia?: string | null;
     departamento?: string | null;
@@ -145,9 +148,21 @@ function formatoFechaHumana(fechaISO: string) {
     }
 }
 
-function construirMensajeWhatsApp(c: CanchaMini, complejo: Complejo, fechaISO: string, hora: string) {
+function formatDuracion(duracionHoras: number) {
+    if (!duracionHoras || duracionHoras <= 0) return "";
+    return duracionHoras === 1 ? "1 hora" : `${duracionHoras} horas`;
+}
+
+function construirMensajeWhatsApp(
+    c: CanchaMini,
+    complejo: Complejo,
+    fechaISO: string,
+    hora: string,
+    duracionHoras: number
+) {
     const lugar = [complejo.distrito, complejo.provincia, complejo.departamento].filter(Boolean).join(", ");
     const fechaHumana = formatoFechaHumana(fechaISO);
+    const duracionTxt = formatDuracion(duracionHoras);
     const zona = lugar || "Lima";
     const precio = `S/ ${Number(c.precioHora || 0).toFixed(0)}/h`;
     const tipo = c.tipo ? `${c.tipo} \u2022 ${c.pasto || ""}`.trim() : "Por confirmar";
@@ -172,16 +187,18 @@ function construirMensajeWhatsApp(c: CanchaMini, complejo: Complejo, fechaISO: s
         `${target} *Tipo:* ${tipo}\n` +
         `${money} *Precio:* ${precio}\n\n` +
         `${calendar} *Fecha:* ${fechaHumana}\n` +
-        `${clock} *Hora:* ${hora}\n\n` +
+        `${clock} *Hora:* ${hora}\n` +
+        (duracionTxt ? `${target} *Duracion:* ${duracionTxt}\n\n` : "\n") +
         `${check} \u00bfEst\u00e1 disponible en ese horario?\n` +
         `${chat} Si me confirmas, lo reservo de inmediato.\n\n` +
         `${thanks} \u00a1Gracias! Quedo atento(a).`
     );
 }
 
-function construirMensajeWhatsAppEstandar(complejo: Complejo, fechaISO: string, hora: string) {
+function construirMensajeWhatsAppEstandar(complejo: Complejo, fechaISO: string, hora: string, duracionHoras: number) {
     const lugar = [complejo.distrito, complejo.provincia, complejo.departamento].filter(Boolean).join(", ");
     const fechaHumana = formatoFechaHumana(fechaISO);
+    const duracionTxt = formatDuracion(duracionHoras);
     const zona = lugar || "Lima";
     const precio =
         typeof complejo.precioMin === "number" && typeof complejo.precioMax === "number"
@@ -209,7 +226,8 @@ function construirMensajeWhatsAppEstandar(complejo: Complejo, fechaISO: string, 
         `${pin} *Zona:* ${zona}\n` +
         (precio ? `${money} *Precio:* ${precio}\n\n` : "\n") +
         `${calendar} *Fecha:* ${fechaHumana}\n` +
-        `${clock} *Hora:* ${hora}\n\n` +
+        `${clock} *Hora:* ${hora}\n` +
+        (duracionTxt ? `${target} *Duracion:* ${duracionTxt}\n\n` : "\n") +
         `${check} \u00bfEst\u00e1 disponible en ese horario?\n` +
         `${chat} Si me confirmas, lo reservo de inmediato.\n\n` +
         `${thanks} \u00a1Gracias! Quedo atento(a).`
@@ -218,7 +236,7 @@ function construirMensajeWhatsAppEstandar(complejo: Complejo, fechaISO: string, 
 
 function buildWhatsAppUrl(phone: string, message: string) {
     const encoded = encodeURIComponent(message);
-    return `https://api.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+    return `https://wa.me/${phone}?text=${encoded}`;
 }
 
 function cleanUrl(value?: string | null) {
@@ -289,6 +307,7 @@ function mapComplejosFromApi(complejos: ComplejoApi[]) {
         return {
             id: cx.id,
             nombre: cx.nombre,
+            slug: cx.slug || "",
             zona,
             departamento,
             provincia,
@@ -325,6 +344,7 @@ export default function SeccionLoNuevo() {
     const [reservaCanchaId, setReservaCanchaId] = useState<number | null>(null);
     const [reservaFecha, setReservaFecha] = useState("");
     const [reservaHora, setReservaHora] = useState("");
+    const [reservaDuracion, setReservaDuracion] = useState(1);
     const [reservaError, setReservaError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -425,6 +445,7 @@ export default function SeccionLoNuevo() {
         const iso = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
         setReservaFecha(iso);
         setReservaHora("19:00");
+        setReservaDuracion(1);
     }
 
     function cerrarModales() {
@@ -477,8 +498,8 @@ export default function SeccionLoNuevo() {
         }
 
         const msg = esEstandar
-            ? construirMensajeWhatsAppEstandar(activo, reservaFecha, reservaHora)
-            : construirMensajeWhatsApp(cancha as CanchaMini, activo, reservaFecha, reservaHora);
+            ? construirMensajeWhatsAppEstandar(activo, reservaFecha, reservaHora, reservaDuracion)
+            : construirMensajeWhatsApp(cancha as CanchaMini, activo, reservaFecha, reservaHora, reservaDuracion);
         const url = buildWhatsAppUrl(phone, msg);
         if (process.env.NODE_ENV !== "production") {
             console.log("[whatsapp] mensaje:", msg);
@@ -533,7 +554,11 @@ export default function SeccionLoNuevo() {
 
                         return (
                             <article key={card.id} className={`card ${styles.card}`}>
-                                <div className={styles.cardMediaWrap}>
+                                <Link
+                                    href={`/${card.slug}`}
+                                    className={styles.cardMediaWrap}
+                                    aria-label={`Ver ${card.nombre}`}
+                                >
                                     <img
                                         src={card.fotoUrl || DEFAULT_FOTO}
                                         alt={card.nombre}
@@ -548,7 +573,7 @@ export default function SeccionLoNuevo() {
                                         <i className={`bi ${card.verificado ? "bi-shield-check" : "bi-shield"} me-1`} aria-hidden="true"></i>
                                         {card.verificado ? "Verificado" : "Estandar"}
                                     </span>
-                                </div>
+                                </Link>
                                 <div className={styles.cardBody}>
                                     <div className={styles.cardTop}>
                                         <h3 className={styles.cardTitulo}>{card.nombre}</h3>
@@ -567,14 +592,13 @@ export default function SeccionLoNuevo() {
 
                                     <div className={styles.cardFooter}>
                                         <div className={styles.cardAcciones}>
-                                            <button
-                                                type="button"
+                                            <Link
+                                                href={`/${card.slug}`}
                                                 className={`btn btn-outline-secondary btn-sm rounded-pill px-3 ${styles.btnDetalle}`}
-                                                onClick={() => abrirDetalle(card)}
                                             >
                                                 <i className="bi bi-info-circle me-2" aria-hidden="true"></i>
                                                 Ver detalles
-                                            </button>
+                                            </Link>
                                             <button
                                                 type="button"
                                                 className={`btn btn-success btn-sm rounded-pill px-3 ${styles.btnReservar}`}
@@ -618,8 +642,8 @@ export default function SeccionLoNuevo() {
                                 <p className={styles.modalSub}>
                                     {reservaOpen
                                         ? activo?.verificado
-                                            ? "Elige la cancha, fecha y hora. Se enviara en el mensaje al propietario."
-                                            : "Elige fecha y hora. Se enviara en el mensaje al propietario."
+                                            ? "Elige la cancha, fecha, hora y duracion. Se enviara en el mensaje al propietario."
+                                            : "Elige fecha, hora y duracion. Se enviara en el mensaje al propietario."
                                         : activo?.zona || "Ubicacion no disponible"}
                                 </p>
                             </div>
@@ -719,6 +743,23 @@ export default function SeccionLoNuevo() {
                                             value={reservaHora}
                                             onChange={(e) => setReservaHora(e.target.value)}
                                         />
+                                    </label>
+
+                                    <label className={styles.modalField}>
+                                        <span className={styles.modalLabel}>
+                                            <i className="bi bi-hourglass-split me-2" aria-hidden="true"></i>
+                                            Duracion
+                                        </span>
+                                        <select
+                                            className="form-select form-select-sm rounded-3"
+                                            value={reservaDuracion}
+                                            onChange={(e) => setReservaDuracion(Number(e.target.value))}
+                                        >
+                                            <option value="1">1 hora</option>
+                                            <option value="2">2 horas</option>
+                                            <option value="3">3 horas</option>
+                                            <option value="4">4 horas</option>
+                                        </select>
                                     </label>
                                 </div>
 

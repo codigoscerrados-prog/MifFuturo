@@ -14,6 +14,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from app.core.deps import get_db, require_role, get_usuario_actual
+from app.core.images import resize_square_image
+from app.core.slug import slugify
 from app.modelos.modelos import Complejo, Cancha, CanchaImagen, Reserva, Plan, Suscripcion
 from app.esquemas.esquemas import (
     ComplejoCrear,
@@ -45,6 +47,11 @@ ALLOWED = {
 
 def check_owner(u, owner_id: int | None):
     return u.role == "admin" or (owner_id is not None and owner_id == u.id)
+
+
+def _slug_base(nombre: str) -> str:
+    base = slugify(nombre or "")
+    return base or "complejo"
 
 def _plan_actual(db: Session, user_id: int) -> Plan | None:
     fila = (
@@ -156,7 +163,24 @@ def crear_complejo(payload: ComplejoCrear, db: Session = Depends(get_db), u=Depe
                 status_code=403,
                 detail=f"Has alcanzado el limite de complejos de tu plan ({limite}).",
             )
-    c = Complejo(**payload.model_dump(exclude_none=True), owner_id=u.id, created_by=u.id)
+    base = _slug_base(payload.nombre)
+    temp_slug = f"{base}-tmp-{uuid.uuid4().hex[:8]}"
+    c = Complejo(
+        **payload.model_dump(exclude_none=True),
+        owner_id=u.id,
+        created_by=u.id,
+        slug=temp_slug,
+    )
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+
+    existe = (
+        db.query(Complejo)
+        .filter(Complejo.slug == base, Complejo.id != c.id)
+        .first()
+    )
+    c.slug = f"{base}-{c.id}" if existe else base
     db.add(c)
     db.commit()
     db.refresh(c)
@@ -180,7 +204,22 @@ def actualizar_complejo(
     if not check_owner(u, c.owner_id):
         raise HTTPException(403, "No autorizado")
 
-    for k, v in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    if "slug" in data:
+        nuevo = slugify(data.get("slug") or "")
+        if not nuevo:
+            raise HTTPException(400, "Slug invalido")
+        existente = (
+            db.query(Complejo)
+            .filter(Complejo.slug == nuevo, Complejo.id != c.id)
+            .first()
+        )
+        if existente:
+            raise HTTPException(409, "El slug ya esta en uso")
+        c.slug = nuevo
+        data.pop("slug", None)
+
+    for k, v in data.items():
         if k == "owner_id":
             continue
         setattr(c, k, v)
@@ -216,6 +255,10 @@ async def subir_foto_complejo(
         raise HTTPException(413, "Archivo muy pesado (máx 5MB)")
 
     ext = ALLOWED[archivo.content_type]
+    try:
+        data = resize_square_image(data, 400, ext)
+    except Exception:
+        pass
 
     folder = UPLOAD_ROOT_COMPLEJOS / str(complejo_id)
     folder.mkdir(parents=True, exist_ok=True)

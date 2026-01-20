@@ -51,6 +51,7 @@ type CanchaApi = {
 type ComplejoApi = {
     id: number;
     nombre: string;
+    slug?: string | null;
     distrito?: string | null;
     provincia?: string | null;
     departamento?: string | null;
@@ -101,6 +102,7 @@ type CanchaCard = {
 type ComplejoCard = {
     id: number;
     nombre: string;
+    slug: string;
     zona: string;
     distrito: string | null;
     provincia: string | null;
@@ -178,7 +180,12 @@ function formatoFechaHumana(fechaISO: string) {
     }
 }
 
-function construirMensajeWhatsApp(c: CanchaCard, fechaISO: string, hora: string) {
+function formatDuracion(duracionHoras: number) {
+    if (!duracionHoras || duracionHoras <= 0) return "";
+    return duracionHoras === 1 ? "1 hora" : `${duracionHoras} horas`;
+}
+
+function construirMensajeWhatsApp(c: CanchaCard, fechaISO: string, hora: string, duracionHoras: number) {
     const wave = "\uD83D\uDC4B";
     const sparkles = "\u2728";
     const soccer = "\u26BD";
@@ -193,6 +200,7 @@ function construirMensajeWhatsApp(c: CanchaCard, fechaISO: string, hora: string)
     const lugar = [c.distrito, c.provincia, c.departamento].filter(Boolean).join(", ");
 
     const fechaHumana = formatoFechaHumana(fechaISO);
+    const duracionTxt = formatDuracion(duracionHoras);
 
     return (
         `${wave} Hola! Quisiera reservar una cancha.\n\n` +
@@ -201,13 +209,14 @@ function construirMensajeWhatsApp(c: CanchaCard, fechaISO: string, hora: string)
         `${pin} Ubicación: *${lugar || "—"}*\n` +
         `${target} Fecha: *${fechaHumana}*\n` +
         `${target} Hora: *${hora}*\n` +
+        (duracionTxt ? `${target} Duracion: *${duracionTxt}*\n` : "") +
         `${money} Precio: *S/ ${c.precioHora.toFixed(0)} /h*\n\n` +
         `${check} ¿Está disponible? ${sparkles}\n\n` +
         `${fire} Gracias! ${thanks}`
     );
 }
 
-function construirMensajeWhatsAppEstandar(complejo: ComplejoCard, fechaISO: string, hora: string) {
+function construirMensajeWhatsAppEstandar(complejo: ComplejoCard, fechaISO: string, hora: string, duracionHoras: number) {
     const wave = "\uD83D\uDC4B";
     const sparkles = "\u2728";
     const stadium = "\uD83C\uDFDF\uFE0F";
@@ -220,6 +229,7 @@ function construirMensajeWhatsAppEstandar(complejo: ComplejoCard, fechaISO: stri
 
     const lugar = [complejo.distrito, complejo.provincia, complejo.departamento].filter(Boolean).join(", ");
     const fechaHumana = formatoFechaHumana(fechaISO);
+    const duracionTxt = formatDuracion(duracionHoras);
     const tienePrecio = complejo.canchasCount > 0;
     const precio = tienePrecio
         ? `S/ ${complejo.precioMin.toFixed(0)} - ${complejo.precioMax.toFixed(0)} /h`
@@ -231,7 +241,8 @@ function construirMensajeWhatsAppEstandar(complejo: ComplejoCard, fechaISO: stri
         `${pin} Ubicación: *${lugar || "-"}*\n` +
         (precio ? `${money} Precio: *${precio}*\n\n` : "\n") +
         `${target} Fecha: *${fechaHumana}*\n` +
-        `${target} Hora: *${hora}*\n\n` +
+        `${target} Hora: *${hora}*\n` +
+        (duracionTxt ? `${target} Duracion: *${duracionTxt}*\n\n` : "\n") +
         `${check} ¿Está disponible? ${sparkles}\n\n` +
         `${fire} Gracias! ${thanks}`
     );
@@ -328,6 +339,7 @@ function mapComplejosFromApi(
         return {
             id: cx.id,
             nombre: cx.nombre,
+            slug: cx.slug || "",
             zona,
             distrito: distrito || null,
             provincia: provincia || null,
@@ -384,6 +396,7 @@ export default function BusquedaDeCancha({
     const [reservaCanchaId, setReservaCanchaId] = useState<number | null>(null);
     const [reservaFecha, setReservaFecha] = useState("");
     const [reservaHora, setReservaHora] = useState("");
+    const [reservaDuracion, setReservaDuracion] = useState(1);
     const [reservaError, setReservaError] = useState<string | null>(null);
 
     // ✅ Modal detalle (COMPLEJO)
@@ -616,7 +629,7 @@ export default function BusquedaDeCancha({
                                                 onClick={() => abrirModalDetalleComplejo(cx)}
                                             >
                                                 <i className="bi bi-info-circle me-2" aria-hidden="true"></i>
-                                                Detalles
+                                                Ver perfil
                                             </button>
                                         </div>
                                     </div>
@@ -680,6 +693,10 @@ export default function BusquedaDeCancha({
 
     // ✅ MODAL DETALLE
     function abrirModalDetalleComplejo(cx: ComplejoCard) {
+        if (cx.slug) {
+            window.location.href = `/${cx.slug}`;
+            return;
+        }
         setDetalleComplejo(cx);
         setDetalleOpen(true);
     }
@@ -702,6 +719,7 @@ export default function BusquedaDeCancha({
         const iso = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
         setReservaFecha(iso);
         setReservaHora("19:00");
+        setReservaDuracion(1);
     }
     function cerrarModalReserva() {
         setReservaOpen(false);
@@ -739,8 +757,8 @@ export default function BusquedaDeCancha({
         }
 
         const msg = esEstandar
-            ? construirMensajeWhatsAppEstandar(reservaComplejo, reservaFecha, reservaHora)
-            : construirMensajeWhatsApp(cancha as CanchaCard, reservaFecha, reservaHora);
+            ? construirMensajeWhatsAppEstandar(reservaComplejo, reservaFecha, reservaHora, reservaDuracion)
+            : construirMensajeWhatsApp(cancha as CanchaCard, reservaFecha, reservaHora, reservaDuracion);
         const url = buildWhatsAppUrl(phone, msg);
         window.open(url, "_blank", "noopener,noreferrer");
         cerrarModalReserva();
@@ -1000,6 +1018,23 @@ export default function BusquedaDeCancha({
                                     value={reservaHora}
                                     onChange={(e) => setReservaHora(e.target.value)}
                                 />
+                            </label>
+
+                            <label className={styles.modalField}>
+                                <span className={styles.modalLabel}>
+                                    <i className="bi bi-hourglass-split me-2" aria-hidden="true"></i>
+                                    Duracion
+                                </span>
+                                <select
+                                    className="form-select form-select-sm rounded-3"
+                                    value={reservaDuracion}
+                                    onChange={(e) => setReservaDuracion(Number(e.target.value))}
+                                >
+                                    <option value="1">1 hora</option>
+                                    <option value="2">2 horas</option>
+                                    <option value="3">3 horas</option>
+                                    <option value="4">4 horas</option>
+                                </select>
                             </label>
                         </div>
 

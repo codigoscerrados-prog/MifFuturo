@@ -1,12 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import update  # ✅ IMPORTANTE
+import uuid
 
 from app.core.deps import get_db, require_role, get_usuario_actual
+from app.core.slug import slugify
 from app.modelos.modelos import Complejo, Cancha, User
 from app.esquemas.esquemas import ComplejoCrear, ComplejoActualizar, ComplejoOut
 
 router = APIRouter(prefix="/admin/complejos", tags=["admin-complejos"])
+
+
+def _slug_base(nombre: str) -> str:
+    base = slugify(nombre or "")
+    return base or "complejo"
 
 
 @router.get("", response_model=list[ComplejoOut], dependencies=[Depends(require_role("admin"))])
@@ -16,7 +23,18 @@ def listar(db: Session = Depends(get_db)):
 
 @router.post("", response_model=ComplejoOut, dependencies=[Depends(require_role("admin"))])
 def crear(payload: ComplejoCrear, db: Session = Depends(get_db), u=Depends(get_usuario_actual)):
-    c = Complejo(**payload.model_dump(exclude_none=True), created_by=u.id)
+    base = _slug_base(payload.nombre)
+    temp_slug = f"{base}-tmp-{uuid.uuid4().hex[:8]}"
+    c = Complejo(**payload.model_dump(exclude_none=True), created_by=u.id, slug=temp_slug)
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    existe = (
+        db.query(Complejo)
+        .filter(Complejo.slug == base, Complejo.id != c.id)
+        .first()
+    )
+    c.slug = f"{base}-{c.id}" if existe else base
     db.add(c)
     db.commit()
     db.refresh(c)
@@ -29,7 +47,22 @@ def actualizar(complejo_id: int, payload: ComplejoActualizar, db: Session = Depe
     if not c:
         raise HTTPException(404, "Complejo no encontrado")
 
-    for k, v in payload.model_dump(exclude_none=True).items():
+    data = payload.model_dump(exclude_none=True)
+    if "slug" in data:
+        nuevo = slugify(data.get("slug") or "")
+        if not nuevo:
+            raise HTTPException(400, "Slug invalido")
+        existente = (
+            db.query(Complejo)
+            .filter(Complejo.slug == nuevo, Complejo.id != c.id)
+            .first()
+        )
+        if existente:
+            raise HTTPException(409, "El slug ya esta en uso")
+        c.slug = nuevo
+        data.pop("slug", None)
+
+    for k, v in data.items():
         setattr(c, k, v)
 
     db.commit()

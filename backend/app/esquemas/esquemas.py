@@ -203,6 +203,7 @@ class ComplejoCrear(BaseModel):
 
 class ComplejoActualizar(BaseModel):
     nombre: Optional[str] = None
+    slug: Optional[str] = None
     descripcion: Optional[str] = None
     direccion: Optional[str] = None
     distrito: Optional[str] = None
@@ -226,6 +227,7 @@ class ComplejoOut(BaseModel):
 
     id: int
     nombre: str
+    slug: str
     descripcion: Optional[str] = None
     direccion: Optional[str] = None
     distrito: Optional[str] = None
@@ -250,6 +252,7 @@ class ComplejoPublicOut(BaseModel):
 
     id: int
     nombre: str
+    slug: str
     descripcion: Optional[str] = None
     direccion: Optional[str] = None
     distrito: Optional[str] = None
@@ -269,6 +272,49 @@ class ComplejoPublicOut(BaseModel):
     owner_phone: Optional[str] = None
 
     canchas: list[CanchaOut] = Field(default_factory=list)
+
+
+class ComplejoImagenOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    url: str
+    orden: int
+    is_cover: bool = False
+
+
+class ComplejoPerfilOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    slug: str
+    descripcion: Optional[str] = None
+    direccion: Optional[str] = None
+    distrito: Optional[str] = None
+    provincia: Optional[str] = None
+    departamento: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
+
+    techada: bool
+    iluminacion: bool
+    vestuarios: bool
+    estacionamiento: bool
+    cafeteria: bool
+
+    foto_url: Optional[str] = None
+    is_active: bool
+    owner_id: Optional[int] = None
+    owner_phone: Optional[str] = None
+
+    imagenes: list[ComplejoImagenOut] = Field(default_factory=list)
+    canchas: list[CanchaOut] = Field(default_factory=list)
+    caracteristicas: list[str] = Field(default_factory=list)
+
+    likes_count: int = 0
+    liked_by_me: bool = False
+    is_owner: bool = False
 
 class ReservaCrear(BaseModel):
     model_config = ConfigDict(extra="ignore")

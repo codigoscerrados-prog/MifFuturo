@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.routers.auth import router as auth_router
 from app.routers.canchas_publicas import router as canchas_publicas_router
+from app.routers.complejos_publicos import router as complejos_publicos_router
 from app.routers.admin_canchas import router as admin_canchas_router
 from app.routers.reclamos import router as reclamos_router
 from app.routers.admin_complejos import router as admin_complejos_router
@@ -44,6 +45,7 @@ app.add_middleware(
 # ✅ Routers
 app.include_router(auth_router)
 app.include_router(canchas_publicas_router)
+app.include_router(complejos_publicos_router)
 app.include_router(admin_canchas_router)
 app.include_router(reclamos_router)
 app.include_router(admin_complejos_router)

@@ -73,6 +73,7 @@ class Complejo(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
 
     nombre = Column(String(160), nullable=False)
+    slug = Column(String(220), nullable=False, unique=True, index=True)
     descripcion = Column(Text)
     direccion = Column(String(240))
     distrito = Column(String(120))
@@ -106,6 +107,21 @@ class Complejo(Base):
 
     canchas = relationship(
         "Cancha",
+        back_populates="complejo",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    imagenes = relationship(
+        "ComplejoImagen",
+        back_populates="complejo",
+        cascade="all, delete-orphan",
+        order_by="ComplejoImagen.orden",
+        passive_deletes=True,
+    )
+
+    likes = relationship(
+        "ComplejoLike",
         back_populates="complejo",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -240,6 +256,40 @@ class CanchaImagen(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     cancha = relationship("Cancha", back_populates="imagenes")
+
+
+# =========================
+# Imágenes de Complejo
+# =========================
+class ComplejoImagen(Base):
+    __tablename__ = "complejo_imagenes"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    complejo_id = Column(BigInteger, ForeignKey("complejos.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    url = Column(Text, nullable=False)
+    orden = Column(Integer, nullable=False, default=0)
+    is_cover = Column(Boolean, nullable=False, default=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    complejo = relationship("Complejo", back_populates="imagenes")
+
+
+# =========================
+# Likes de Complejo
+# =========================
+class ComplejoLike(Base):
+    __tablename__ = "complejo_likes"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    complejo_id = Column(BigInteger, ForeignKey("complejos.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    complejo = relationship("Complejo", back_populates="likes")
+    user = relationship("User")
 
 
 # =========================

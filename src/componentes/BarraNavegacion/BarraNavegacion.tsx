@@ -38,8 +38,7 @@ function IconoCerrar({ className = "" }: { className?: string }) {
 export default function BarraNavegacion() {
     const router = useRouter();
     const pathname = usePathname();
-
-    if (pathname?.startsWith("/panel")) return null;
+    const hideNav = pathname?.startsWith("/panel");
 
     const [token, setToken] = useState<string | null>(null);
     const [nombreUsuario, setNombreUsuario] = useState<string | null>(null);
@@ -47,6 +46,7 @@ export default function BarraNavegacion() {
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
+        if (hideNav) return;
         const sync = () => setToken(getToken());
         sync();
 
@@ -59,9 +59,10 @@ export default function BarraNavegacion() {
             window.removeEventListener("storage", sync);
             window.removeEventListener("focus", sync);
         };
-    }, []);
+    }, [hideNav]);
 
     useEffect(() => {
+        if (hideNav) return;
         let activo = true;
         if (!token) {
             setNombreUsuario(null);
@@ -83,15 +84,17 @@ export default function BarraNavegacion() {
         return () => {
             activo = false;
         };
-    }, [token]);
+    }, [token, hideNav]);
 
     // cerrar menú al cambiar de ruta
     useEffect(() => {
+        if (hideNav) return;
         setMenuOpen(false);
-    }, [pathname]);
+    }, [pathname, hideNav]);
 
     // ESC para cerrar + bloquear scroll cuando abre
     useEffect(() => {
+        if (hideNav) return;
         function onKey(e: KeyboardEvent) {
             if (e.key === "Escape") setMenuOpen(false);
         }
@@ -101,9 +104,10 @@ export default function BarraNavegacion() {
             document.removeEventListener("keydown", onKey);
             document.body.style.overflow = "";
         };
-    }, [menuOpen]);
+    }, [menuOpen, hideNav]);
 
     useEffect(() => {
+        if (hideNav) return;
         function onScroll() {
             const y = window.scrollY;
             setScrolled(y > 8);
@@ -111,7 +115,7 @@ export default function BarraNavegacion() {
         onScroll();
         window.addEventListener("scroll", onScroll, { passive: true });
         return () => window.removeEventListener("scroll", onScroll);
-    }, []);
+    }, [hideNav]);
 
     const role = useMemo(() => getRoleFromToken(token), [token]);
     const rutaPanel = useMemo(() => rutaPorRole(role), [role]);
@@ -134,6 +138,8 @@ export default function BarraNavegacion() {
         const b = parts[1]?.[0] || "P";
         return `${a}${b}`.toUpperCase();
     }, [nombreUsuario]);
+
+    if (hideNav) return null;
 
     return (
         <header

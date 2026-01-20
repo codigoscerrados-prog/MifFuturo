@@ -96,6 +96,13 @@
     margin-bottom: 12px;
 }
 
+.actionsRow {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .loadingBox {
     padding: 16px;
     border-radius: 12px;
