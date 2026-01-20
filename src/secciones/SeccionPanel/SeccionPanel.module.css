@@ -124,6 +124,7 @@
 
 .userInfo {
     min-width: 0;
+    flex: 1;
 }
 
 .userName {
@@ -138,6 +139,30 @@
     font-weight: 800;
     color: var(--muted);
     word-break: break-word;
+}
+
+.userLogout {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.10);
+    color: #7f1d1d;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.userLogout:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.userLogout:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
 }
 
 .sidebarNav {

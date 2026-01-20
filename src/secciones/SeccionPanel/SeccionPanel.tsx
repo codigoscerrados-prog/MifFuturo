@@ -255,6 +255,15 @@ export default function SeccionPanel({
                                     <p className={styles.userName}>{displayName}</p>
                                     {perfil?.email ? <p className={styles.userMeta}>{perfil.email}</p> : null}
                                 </div>
+                                <button
+                                    type="button"
+                                    className={styles.userLogout}
+                                    onClick={cerrarSesion}
+                                    aria-label="Cerrar sesion"
+                                    title="Cerrar sesion"
+                                >
+                                    <i className="bi bi-box-arrow-right" aria-hidden="true"></i>
+                                </button>
                             </div>
 
                             <details className={styles.sidebarNav} open>
@@ -283,11 +292,6 @@ export default function SeccionPanel({
 
                             <div id="panel-reservas-calendar-slot" className={styles.sidebarCalendarSlot} />
 
-                            <div className={styles.sidebarFooter}>
-                                <button type="button" className={styles.sidebarLogout} onClick={cerrarSesion}>
-                                    Cerrar sesion
-                                </button>
-                            </div>
                         </div>
                     </aside>
 

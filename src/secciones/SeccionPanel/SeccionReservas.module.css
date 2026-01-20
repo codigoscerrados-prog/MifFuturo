@@ -572,8 +572,9 @@
 
 .timelineGrid {
     --court-count: 1;
+    --time-col: 170px;
     display: inline-block;
-    min-width: max(100%, calc(80px + (var(--court-count) * 180px)));
+    min-width: max(100%, calc(var(--time-col) + (var(--court-count) * 180px)));
     width: max-content;
 }
 
@@ -582,7 +583,7 @@
     top: 0;
     z-index: 3;
     display: grid;
-    grid-template-columns: 80px repeat(var(--court-count), 180px);
+    grid-template-columns: var(--time-col) repeat(var(--court-count), 180px);
     min-width: 100%;
     width: max-content;
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
@@ -635,8 +636,8 @@
 
 .timelineRow {
     display: grid;
-    grid-template-columns: 80px repeat(var(--court-count), 180px);
-    min-height: 72px;
+    grid-template-columns: var(--time-col) repeat(var(--court-count), 180px);
+    min-height: 96px;
     min-width: 100%;
     width: max-content;
     border-bottom: 1px solid var(--borde);
@@ -652,7 +653,16 @@
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
     border-right: 1px solid var(--borde);
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 4px;
+}
+
+.timeRange {
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
 }
 
 .slotCell {
@@ -669,8 +679,135 @@
     justify-content: center;
 }
 
+.slotStack {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+}
+
+.slotHalf {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.reservedBlock {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--res-court-border, var(--borde));
+    background: var(--res-court-bg, rgba(15, 23, 42, .06));
+    color: var(--azulMarino);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: .2px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.reservedBlock::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: var(--res-client, rgba(15, 23, 42, .35));
+}
+
+.reservedBlock:focus-visible {
+    outline: none;
+    box-shadow: var(--sombra-glow);
+}
+
+.reservedLabel {
+    position: relative;
+    z-index: 1;
+}
+
+.reservedName {
+    position: relative;
+    z-index: 1;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reservedStatus {
+    position: relative;
+    z-index: 1;
+    margin-top: 2px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    border: 1px solid var(--borde);
+    background: rgba(15, 23, 42, .04);
+    color: var(--azulMarino);
+    text-transform: uppercase;
+    letter-spacing: .2px;
+}
+
+.reservedStatusOk {
+    border-color: rgba(34, 197, 94, .35);
+    background: rgba(34, 197, 94, .10);
+    color: #14532d;
+}
+
+.reservedStatusWarn {
+    border-color: rgba(124, 58, 237, .35);
+    background: rgba(124, 58, 237, .10);
+    color: var(--moradoAcento);
+}
+
+.reservedStatusOff {
+    border-color: rgba(100, 116, 139, .35);
+    background: rgba(100, 116, 139, .10);
+    color: #334155;
+}
+
+.reservedStatusPending {
+    border-color: rgba(15, 23, 42, .18);
+    background: rgba(15, 23, 42, .04);
+    color: var(--azulMarino);
+}
+
+.slotHalfPast {
+    border: 1px dashed var(--borde);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .02);
+    align-items: center;
+    justify-content: center;
+}
+
+.slotHalfBlocked {
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, .04);
+    align-items: center;
+    justify-content: center;
+}
+
+.slotBlockedText {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 900;
+    text-align: center;
+}
+
 .slotButton {
     width: 100%;
+    height: 100%;
     border: 1px dashed var(--borde);
     border-radius: 14px;
     background: rgba(15, 23, 42, .02);
@@ -683,6 +820,38 @@
     transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
 
+.slotButtonCompact {
+    padding: 8px 10px;
+}
+
+.eventCardCompact {
+    padding: 6px 8px;
+    gap: 4px;
+}
+
+.eventCardCompact .eventName {
+    font-size: 12px;
+}
+
+.eventCardCompact .eventTime {
+    font-size: 11px;
+}
+
+.eventCardCompact .eventPhone {
+    font-size: 11px;
+}
+
+.eventCardCompact .iconBtn {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+}
+
+.eventCardCompact .icon {
+    width: 14px;
+    height: 14px;
+}
+
 .slotButton:hover {
     transform: translateY(-1px);
     border-color: rgba(15, 23, 42, .25);
@@ -691,6 +860,7 @@
 
 .eventCard {
     width: 100%;
+    height: 100%;
     border-radius: 14px;
     border: 1px solid var(--borde);
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
@@ -930,6 +1100,56 @@
     margin-bottom: 10px;
 }
 
+.daySplit {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.dayCards {
+    min-width: 0;
+}
+
+.dayMetrics {
+    border: 1px solid var(--borde);
+    border-radius: 18px;
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    box-shadow: var(--sombra-sm);
+    padding: 12px;
+    overflow-x: auto;
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+    gap: 10px;
+    min-width: 720px;
+}
+
+.metricCard {
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, .02);
+    padding: 10px 12px;
+    display: grid;
+    gap: 4px;
+}
+
+.metricLabel {
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .2px;
+}
+
+.metricValue {
+    font-size: 16px;
+    font-weight: 950;
+    color: var(--azulMarino);
+}
+
 .counter {
     display: inline-flex;
     align-items: center;
@@ -1065,6 +1285,12 @@
 
 .btnGhost:hover {
     filter: brightness(.99);
+}
+
+.btnGhost:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .btnGhost:focus-visible,
@@ -1214,16 +1440,18 @@
 }
 
 .modalBody {
-    padding: 16px;
+    padding: 12px;
     display: grid;
-    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     max-height: 72vh;
     overflow: auto;
 }
 
 .field {
     display: grid;
-    gap: 6px;
+    gap: 4px;
+    min-width: 0;
 }
 
 .label {
@@ -1238,13 +1466,19 @@
 .select,
 .textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border-radius: 14px;
     border: 1px solid var(--borde);
     background: var(--blanco);
     color: var(--azulMarino);
     font-weight: 800;
     outline: none;
+}
+
+.modalBody .field:last-of-type,
+.modalActions,
+.help {
+    grid-column: 1 / -1;
 }
 
 .textarea {
