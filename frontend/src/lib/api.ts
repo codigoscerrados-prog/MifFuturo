@@ -62,7 +62,7 @@ type ApiFetchOpts = {
 };
 
 export async function apiFetch<T>(path: string, opts: ApiFetchOpts = {}): Promise<T> {
-    const { token, method = "GET", headers = {}, body = null, cache = "no-store" } = opts;
+    const { token, method = "GET", headers = {}, body = null, cache = "no-store", signal = null } = opts;
 
     const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
