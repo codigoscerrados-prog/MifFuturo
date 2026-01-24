@@ -15,13 +15,13 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://miffuturo.onrender.com,http://localhost:3000
+        value: https://miffuturo.onrender.com,https://miffuturo-backend.onrender.com,http://localhost:3000
       - key: FRONTEND_ORIGIN
         value: https://miffuturo.onrender.com
       - key: GOOGLE_CLIENT_ID
       - key: GOOGLE_CLIENT_SECRET
       - key: GOOGLE_REDIRECT_URI
-        value: https://miffuturo-backend.onrender.com/auth/google/callback
+        value: https://miffuturo.onrender.com/api/auth/callback/google
   - name: miffuturo
     type: web
     env: node
@@ -38,3 +38,6 @@ services:
           property: hostport
       - key: API_ORIGIN
         value: https://miffuturo-backend.onrender.com
+      - key: NEXTAUTH_URL
+        value: https://miffuturo.onrender.com
+      - key: GOOGLE_CLIENT_ID

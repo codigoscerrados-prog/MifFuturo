@@ -40,33 +40,39 @@ https://miffuturo.onrender.com
 ### Services & environment variables
 
 #### Backend (`miffuturo-backend`)
-- `DATABASE_URL` – Usa la conexión interna de Render (p. ej. `postgresql://...@.../db_marconi_lateralverde`); no lo subas al repositorio.
-- `JWT_SECRET_KEY` – Genera un valor seguro (Render lo puede crear automáticamente).
+- `DATABASE_URL` – Usa la conexión interna de Render (por ejemplo `postgresql://.../db_marconi_lateralverde`) y déjalo en Render; no lo commitees.
+- `JWT_SECRET_KEY` – Genera un valor seguro (Render puede generarlo automáticamente).
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- `GOOGLE_REDIRECT_URI` – debe ser `https://miffuturo-backend.onrender.com/auth/google/callback`.
-- `FRONTEND_ORIGIN` – fija en `https://miffuturo.onrender.com`.
-- `CORS_ORIGINS` – `https://miffuturo.onrender.com,http://localhost:3000` para permitir la UI y el entorno local.
+- `GOOGLE_REDIRECT_URI` – debe apuntar a la ruta pública que Google redirige después del login: `https://miffuturo.onrender.com/api/auth/callback/google`.
+- `FRONTEND_ORIGIN` – fija en `https://miffuturo.onrender.com` para que el backend redirija al sitio correcto después del login.
+- `CORS_ORIGINS` – incluye `https://miffuturo.onrender.com,https://miffuturo-backend.onrender.com,http://localhost:3000` para permitir la UI y el desarrollo local.
+- `UBIGEO_SOURCE_URL` (opcional) – URL alternativa para descargar el catálogo ubigeo si no deseas mantenerlo en el repo. Si no está definida, se usa `https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv`.
 - `SMTP_*` (HOST, PORT, USER, PASS) según tu proveedor si necesitas enviar correos.
-- La opción adicional `DATABASE_URL`, `JWT_SECRET_KEY` y `GOOGLE_*` no deben guardarse en el código.
- - El Blueprint ejecuta `python -m app.scripts.bootstrap_db` antes del deploy, y `init_db()` lo relanza en el arranque para garantizar que las tablas `ubigeo_peru_*` existan y tengan datos (lee `backend/data/Lista_Ubigeos_INEI.csv` cuando está presente o descarga `https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv`).<br>
-   Si necesitas recargar manualmente el catálogo, usa `POST /admin/ubigeo/import` con un JSON/CSV y `replace=true`.
+- El backend ejecuta `python -m app.scripts.bootstrap_db` antes de arrancar (`render.yaml` lo define como pre-deploy) y `init_db()` crea tablas `ubigeo_peru_*` + `Plan free` y reusa los datos si ya existen. Si necesitas recargar el catálogo, corre `python -m app.scripts.bootstrap_db` o usa el endpoint protegido `POST /admin/ubigeo/import` con `replace=true`.
 
-- `API_HOSTPORT` – Render la llena automáticamente con el `hostport` del backend (ej. `miffuturo-backend:10000`).
-- `API_ORIGIN` – Siempre `https://miffuturo-backend.onrender.com` para que Next.js sepa a dónde redirigir `/api`.
-- `GOOGLE_CLIENT_ID` – Reutiliza el mismo ID que se usa en el backend para construir el flujo OAuth en `/api/auth/google/login`; la ruta consume este valor backend-side y también el redirect_uri se arma con `NEXTAUTH_URL`/`SITE_URL` (que debe ser `https://miffuturo.onrender.com` en producción).
-- `NEXTAUTH_URL` (y opcional `SITE_URL` o `FRONTEND_ORIGIN`) – URL pública del frontend (`https://miffuturo.onrender.com`) para construir correctamente `redirect_uri` durante el login.
-- `NEXT_PUBLIC_API_*` pueden mantenerse para pruebas locales pero no son necesarios en producción.
+#### Frontend (`miffuturo`)
+- `API_HOSTPORT` – Render llena esto automáticamente con el `hostport` del backend (`miffuturo-backend:10000`).
+- `API_ORIGIN` – debe ser `https://miffuturo-backend.onrender.com`; Next.js usa esta URL en `next.config` para reescribir `/api/:path*` hacia el backend y así evitar CORS.
+- `NEXTAUTH_URL` – fija en `https://miffuturo.onrender.com` (puedes usar `SITE_URL` o `FRONTEND_ORIGIN` como respaldo) para que el OAuth construya `redirect_uri` correctos.
+- `GOOGLE_CLIENT_ID` – el mismo ID del backend; el login lo usa dentro de `frontend/src/app/api/auth/google/login/route.ts`.
+- NO definas `NEXT_PUBLIC_API_ORIGIN` o `NEXT_PUBLIC_API_URL` en producción; el UI ya hace fetch a `/api/...` y confía en el rewrite.
+
+### Google OAuth
+
+- Registra los redirect URIs y Authorized JS origins en la consola de Google Cloud:
+  - Authorized JS origins: `https://miffuturo.onrender.com` y `http://localhost:3000`
+  - Redirect URIs: `https://miffuturo.onrender.com/api/auth/callback/google` (y `http://localhost:3000/api/auth/callback/google` para desarrollo)
+- Tanto el frontend como el backend guardan `GOOGLE_CLIENT_ID` (para iniciar el flujo) y el backend usa `GOOGLE_CLIENT_SECRET` para intercambiar el código. El backend exige `GOOGLE_REDIRECT_URI` para mantenerse coherente con lo que recibió Google.
 
 ### Ubigeo & seeds
 
-- La tabla `ubigeo_peru_*` se crea automáticamente si no existe (`init_db()` se encarga). Para cargar la data usa el nuevo endpoint protegido:
-  ```
-  POST /admin/ubigeo/import
-  ```
-  Acepta JSON con `departments`, `provinces` y `districts` (o un archivo multipart en formato JSON/CSV con columnas `type,id,name,department_id,province_id`). Activa `replace=true` para borrar todo antes de importar. Se requiere usuario admin.
-- Si las rutas públicas `/ubigeo/*` no devuelven datos, el backend registra una advertencia y responde `[]` para que la UI siga funcionando.
+- Las tablas `ubigeo_peru_departments`, `ubigeo_peru_provinces` y `ubigeo_peru_districts` se crean automáticamente cuando arranca el backend. El script `python -m app.scripts.bootstrap_db`:
+  1. Busca primero `backend/data/Lista_Ubigeos_INEI.csv` si lo mantienes en el repo (puedes descargar el CSV oficial y colocarlo allí).
+  2. Si no hay archivo local, descarga el catálogo desde `UBIGEO_SOURCE_URL` o, por defecto, `https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv`.
+  3. Inserta/actualiza departamentos/provincias/distritos sin duplicar registros. Si ocurre un fallo HTTP (404 u otro), solo se loggea y el deploy continúa.
+- Si necesitas recargarlo a mano, usa el endpoint admin `POST /admin/ubigeo/import` (multipart/JSON) con `replace=true`.
 
 ### Build notes
 
-- El frontend depende de `/api` sin CORS, por eso el proxy y los helpers de `src/lib/api.ts` son la única forma recomendada de hacer peticiones.
-- Si el build de Next sigue fallando con SWC, ejecuta `cd frontend && npm install` para regenerar `package-lock.json`.
+- El frontend depende de `/api` sin CORS, por eso el proxy (`next.config.mjs`) y los helpers en `src/lib/api.ts` son la forma recomendada de hacer peticiones.
+- Si ves `Found lockfile missing swc dependencies`, ve a `frontend`, ejecuta `npm install`, y vuelve a correr `npm run build` para regenerar `package-lock.json` antes de desplegar.

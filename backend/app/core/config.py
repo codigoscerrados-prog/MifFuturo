@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = ""
     FRONTEND_ORIGIN: str = "http://localhost:3000"
+    UBIGEO_SOURCE_URL: str = "https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv"
 
     # ✅ No crashea si aparecen variables extra en .env (por ejemplo NEXT_PUBLIC_*)
     model_config = SettingsConfigDict(

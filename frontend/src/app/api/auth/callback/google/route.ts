@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     if (state) {
         exchangeParams.set("state", state);
     }
-    const backendOrigin = (process.env.API_ORIGIN || process.env.NEXT_PUBLIC_API_ORIGIN || "http://127.0.0.1:8000").replace(/\/$/, "");
+    const backendOrigin = (process.env.API_ORIGIN || "http://127.0.0.1:8000").replace(/\/$/, "");
     const exchangeUrl = new URL("/auth/google/callback", backendOrigin);
     exchangeUrl.search = exchangeParams.toString();
 
@@ -34,7 +34,14 @@ export async function GET(request: Request) {
     }
 
     const data = (await res.json()) as CallbackResponse & { next?: string };
-    const redirectUrl = new URL("/auth/callback/google", url.origin);
+    const siteUrl =
+        process.env.NEXTAUTH_URL ||
+        process.env.SITE_URL ||
+        process.env.FRONTEND_ORIGIN ||
+        process.env.BASE_URL ||
+        "http://localhost:3000";
+    const redirectBase = siteUrl.replace(/\/$/, "");
+    const redirectUrl = new URL("/auth/callback/google", redirectBase);
     redirectUrl.searchParams.set("token", data.access_token);
     redirectUrl.searchParams.set("needs_profile", data.needs_profile ? "1" : "0");
     if (data.next) {

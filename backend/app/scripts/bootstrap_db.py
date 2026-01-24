@@ -15,11 +15,18 @@ logger = logging.getLogger(__name__)
 
 DATA_FILE_NAME = "Lista_Ubigeos_INEI.csv"
 LOCAL_DATA_PATH = Path(__file__).resolve().parents[2] / "data" / DATA_FILE_NAME
-REMOTE_URL = "https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv"
+REMOTE_URL_FALLBACK = "https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv"
 
 
 def _normalize_db_url() -> str:
     return normalize_db_url(settings.DATABASE_URL)
+
+
+def _get_remote_url() -> str | None:
+    candidate = settings.UBIGEO_SOURCE_URL.strip()
+    if candidate:
+        return candidate
+    return REMOTE_URL_FALLBACK
 
 
 def _create_tables(conn):
@@ -58,9 +65,14 @@ def _maybe_load_source_text() -> str:
         logger.info("Loading ubigeo data from local file %s", LOCAL_DATA_PATH)
         return LOCAL_DATA_PATH.read_text(encoding="utf-8", errors="ignore")
 
-    logger.info("Downloading ubigeo data from %s", REMOTE_URL)
+    remote_url = _get_remote_url()
+    if not remote_url:
+        logger.warning("No ubigeo source URL configured; skipping download.")
+        return ""
+
+    logger.info("Downloading ubigeo data from %s", remote_url)
     try:
-        with urllib.request.urlopen(REMOTE_URL, timeout=60) as resp:
+        with urllib.request.urlopen(remote_url, timeout=60) as resp:
             return resp.read().decode("utf-8", errors="ignore")
     except urllib.error.HTTPError as exc:
         logger.warning("Failed to download ubigeo data (%s). Will skip import.", exc)
