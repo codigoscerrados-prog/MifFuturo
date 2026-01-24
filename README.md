@@ -51,10 +51,10 @@ https://miffuturo.onrender.com
  - El Blueprint ejecuta `python -m app.scripts.bootstrap_db` antes del deploy, y `init_db()` lo relanza en el arranque para garantizar que las tablas `ubigeo_peru_*` existan y tengan datos (lee `backend/data/Lista_Ubigeos_INEI.csv` cuando está presente o descarga `https://raw.githubusercontent.com/pe-datos/ubigeo/master/ubigeo.csv`).<br>
    Si necesitas recargar manualmente el catálogo, usa `POST /admin/ubigeo/import` con un JSON/CSV y `replace=true`.
 
-#### Frontend (`miffuturo`)
 - `API_HOSTPORT` – Render la llena automáticamente con el `hostport` del backend (ej. `miffuturo-backend:10000`).
 - `API_ORIGIN` – Siempre `https://miffuturo-backend.onrender.com` para que Next.js sepa a dónde redirigir `/api`.
-- `GOOGLE_CLIENT_ID` – Reutiliza el mismo ID que se usa en el backend para construir el flujo OAuth en `/api/auth/google/login`; la ruta consume este valor backend-side.
+- `GOOGLE_CLIENT_ID` – Reutiliza el mismo ID que se usa en el backend para construir el flujo OAuth en `/api/auth/google/login`; la ruta consume este valor backend-side y también el redirect_uri se arma con `NEXTAUTH_URL`/`SITE_URL` (que debe ser `https://miffuturo.onrender.com` en producción).
+- `NEXTAUTH_URL` (y opcional `SITE_URL` o `FRONTEND_ORIGIN`) – URL pública del frontend (`https://miffuturo.onrender.com`) para construir correctamente `redirect_uri` durante el login.
 - `NEXT_PUBLIC_API_*` pueden mantenerse para pruebas locales pero no son necesarios en producción.
 
 ### Ubigeo & seeds

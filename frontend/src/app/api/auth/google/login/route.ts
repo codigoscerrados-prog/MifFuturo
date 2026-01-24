@@ -6,9 +6,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "GOOGLE_CLIENT_ID no configurado" }, { status: 500 });
     }
 
-    const url = new URL(request.url);
-    const origin = url.origin;
-    const redirectUri = `${origin}/api/auth/callback/google`;
+    const siteUrl =
+        process.env.NEXTAUTH_URL || process.env.SITE_URL || process.env.FRONTEND_ORIGIN || "http://localhost:3000";
+    const redirectUri = `${siteUrl.replace(/\/$/, "")}/api/auth/callback/google`;
 
     const statePayload: Record<string, string> = {};
     const role = url.searchParams.get("role");
