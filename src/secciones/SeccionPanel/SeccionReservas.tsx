@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./SeccionReservas.module.css";
 import { apiFetch } from "@/lib/api";
@@ -193,6 +193,11 @@ const HALF_HOUR_SLOTS = TIME_SLOTS.flatMap((slot) => [
     slot,
     addMinutesHHMM(slot, SLOT_MINUTES),
 ]);
+const HOUR_GROUPS = TIME_SLOTS;
+
+function formatSlotRange(slot: string) {
+    return `${slot} a ${addMinutesHHMM(slot, SLOT_MINUTES)}`;
+}
 const DAY_END_MINUTES =
     hhmmToMinutes(HALF_HOUR_SLOTS[HALF_HOUR_SLOTS.length - 1]) + SLOT_MINUTES;
 
@@ -749,6 +754,16 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
 
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowMs = now.getTime();
+    const agendaSlotCount = HALF_HOUR_SLOTS.length;
+    const agendaGridStyle = {
+        gridTemplateColumns: `210px repeat(${agendaSlotCount}, minmax(120px, 1fr))`,
+    };
+    const agendaScrollHeight = Math.min(
+        720,
+        Math.max(320, 120 + canchasActivas.length * 90)
+    );
+    const agendaScrollStyle = { maxHeight: `${agendaScrollHeight}px` };
     const isSelectedToday = selectedDateStr === todayStr;
 
     const calendarNode = (
@@ -1026,153 +1041,114 @@ export default function PanelReservasPropietario({ token }: { token: string }) {
                     {canchasActivas.length === 0 ? (
                         <div className={styles.timelineEmpty}>Aun no tienes canchas registradas.</div>
                     ) : (
-                        <div className={styles.agendaScroll}>
-                            <div
-                                className={styles.timelineGrid}
-                                style={{ ["--court-count" as any]: Math.max(canchasActivas.length, 1) }}
-                            >
-                                <div className={styles.timelineHeaderRow}>
-                                    <div className={styles.timelineCorner}>Hora</div>
-                                    {canchasActivas.map((c) => {
-                                        const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
-                                        const active = selectedCourtId === c.id;
-                                        return (
+                        <div className={styles.agendaScroll} style={agendaScrollStyle}>
+                            <div className={styles.agendaGrid} style={agendaGridStyle}>
+                                <div className={styles.gridCorner}>Cancha</div>
+                                {HALF_HOUR_SLOTS.map((slot) => (
+                                    <div key={slot} className={styles.gridTime}>
+                                        {formatSlotRange(slot)}
+                                    </div>
+                                ))}
+
+                                {canchasActivas.map((c) => {
+                                    const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
+                                    const active = selectedCourtId === c.id;
+                                    return (
+                                        <Fragment key={c.id}>
                                             <div
-                                                key={c.id}
-                                                className={cn(styles.timelineHeaderCell, active && styles.timelineHeaderActive)}
+                                                className={cn(styles.gridCourtLabel, active && styles.gridCourtLabelActive)}
                                                 style={{ borderColor: cs.border }}
                                             >
-                                                <span className={styles.timelineDot} style={{ backgroundColor: cs.dot }} />
-                                                <span className={styles.timelineLabel}>{c.nombre}</span>
+                                                <span className={styles.gridCourtDot} style={{ backgroundColor: cs.dot }} />
+                                                <span className={styles.gridCourtName}>{c.nombre}</span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
+                                            {HALF_HOUR_SLOTS.map((slot) => {
+                                                const slotState = occupiedSlotsByCourt.get(c.id)?.get(slot);
+                                                const slotStartMin = hhmmToMinutes(slot);
+                                                const slotEndMin = slotStartMin + SLOT_MINUTES;
+                                                const isPast = isSelectedToday && nowMinutes >= slotEndMin;
 
-                                <div className={styles.timelineBody}>
-                                    {TIME_SLOTS.map((slot) => {
-                                        const slotMid = addMinutesHHMM(slot, SLOT_MINUTES);
-                                        const slotEnd = addMinutesHHMM(slot, SLOT_MINUTES * 2);
-                                        const subSlots = [slot, slotMid];
-
-                                        return (
-                                            <div key={slot} className={styles.timelineRow}>
-                                                <div className={styles.timeCell}>
-                                                    <span className={styles.timeRange}>
-                                                        {slot} - {slotMid}
-                                                    </span>
-                                                    <span className={styles.timeRange}>
-                                                        {slotMid} - {slotEnd}
-                                                    </span>
-                                                </div>
-                                                {canchasActivas.map((c) => (
-                                                    <div key={`${slot}-${c.id}`} className={styles.slotCell}>
-                                                        <div className={styles.slotStack}>
-                                                            {subSlots.map((subSlot) => {
-                                                                const slotState = occupiedSlotsByCourt.get(c.id)?.get(subSlot);
-                                                                const slotStartMin = hhmmToMinutes(subSlot);
-                                                                const slotEndMin = slotStartMin + SLOT_MINUTES;
-                                                                const isPast = isSelectedToday && nowMinutes >= slotEndMin;
-
-                                                                if (slotState) {
-                                                                    const res = slotState.res;
-                                                                    const resStartMin = hhmmToMinutes(parseHHMM(res.start_at));
-                                                                    const resEndMin = hhmmToMinutes(parseHHMM(res.end_at));
-                                                                    const rowStartMin = hhmmToMinutes(slot);
-                                                                    const rowEndMin = rowStartMin + SLOT_MINUTES * 2;
-                                                                    const isRowStartSlot = slotStartMin === rowStartMin;
-                                                                    const shouldRender =
-                                                                        slotState.isStart || (isRowStartSlot && resStartMin < rowStartMin);
-
-                                                                    if (!shouldRender) return null;
-
-                                                                    const span = Math.max(
-                                                                        1,
-                                                                        Math.min(
-                                                                            2,
-                                                                            Math.ceil(
-                                                                                (Math.min(resEndMin, rowEndMin) - slotStartMin) /
-                                                                                    SLOT_MINUTES
-                                                                            )
-                                                                        )
-                                                                    );
-
-                                                                    const parsed = parseNotas(res.notas);
-                                                                    const cs = canchaColorById.get(c.id) || COURT_COLORSETS[0];
-                                                                    const clientKey = parsed.client_name || parsed.client_phone || String(res.id);
-                                                                    const clientColor = colorFromString(clientKey);
-                                                                    const clientName = parsed.client_name || "Cliente";
-                                                                    const st = (res.payment_status || res.estado || "pendiente") as PaymentStatus;
-                                                                    const statusText = statusLabel(st);
-
-                                                                    return (
-                                                                        <div
-                                                                            key={`${subSlot}-${c.id}`}
-                                                                            className={styles.slotHalf}
-                                                                            style={{ gridRow: `span ${span}` }}
-                                                                        >
-                                                                            <button
-                                                                                type="button"
-                                                                                className={styles.reservedBlock}
-                                                                                style={{
-                                                                                    ["--res-court-bg" as any]: cs.softBg,
-                                                                                    ["--res-court-border" as any]: cs.border,
-                                                                                    ["--res-client" as any]: clientColor,
-                                                                                }}
-                                                                                onClick={() => openEditReservation(res)}
-                                                                                aria-label="Reservado"
-                                                                                title="Reservado"
-                                                                            >
-                                                                                <span className={styles.reservedLabel}>Reservado</span>
-                                                                                <span className={styles.reservedName}>{clientName}</span>
-                                                                                <span
-                                                                                    className={cn(
-                                                                                        styles.reservedStatus,
-                                                                                        st === "pagada" && styles.reservedStatusOk,
-                                                                                        st === "parcial" && styles.reservedStatusWarn,
-                                                                                        st === "cancelada" && styles.reservedStatusOff,
-                                                                                        st === "pendiente" && styles.reservedStatusPending
-                                                                                    )}
-                                                                                >
-                                                                                    {statusText}
-                                                                                </span>
-                                                                            </button>
-                                                                        </div>
-                                                                    );
-                                                                }
-
-                                                                if (isPast) {
-                                                                    return (
-                                                                        <div key={`${subSlot}-${c.id}`} className={cn(styles.slotHalf, styles.slotHalfPast)}>
-                                                                            <span className={styles.slotFreeHint}>Horario pasado</span>
-                                                                        </div>
-                                                                    );
-                                                                }
-
-                                                                return (
-                                                                    <div key={`${subSlot}-${c.id}`} className={styles.slotHalf}>
-                                                                        <button
-                                                                            type="button"
-                                                                            className={cn(styles.slotButton, styles.slotButtonCompact)}
-                                                                            onClick={() => openNewReservationForCourt(c.id, subSlot)}
-                                                                        >
-                                                                            <span className={styles.slotFreeHint}>Disponible</span>
-                                                                            <span className={styles.slotPlus} aria-hidden="true">
-                                                                                <svg className={styles.icon} viewBox="0 0 24 24">
-                                                                                    <path d="M12 5v14M5 12h14" />
-                                                                                </svg>
-                                                                            </span>
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                if (slotState) {
+                                                    const res = slotState.res;
+                                                    const parsed = parseNotas(res.notas);
+                                                    const clientKey = parsed.client_name || parsed.client_phone || String(res.id);
+                                                    const clientColor = colorFromString(clientKey);
+                                                    const clientName = parsed.client_name || "Cliente";
+                                                    const st = (res.payment_status || res.estado || "pendiente") as PaymentStatus;
+                                                    const statusText = statusLabel(st);
+                                                    const endMs = new Date(res.end_at).getTime();
+                                                    const remainingMinutes = (endMs - nowMs) / 60000;
+                                                    const endingSoon = remainingMinutes > 0 && remainingMinutes <= 5;
+                                                    return (
+                                                        <div
+                                                            key={`${slot}-${c.id}`}
+                                                            className={cn(styles.gridSlot, styles.gridSlotReserved)}
+                                                            style={{
+                                                                ["--res-court-bg" as any]: cs.softBg,
+                                                                ["--res-court-border" as any]: cs.border,
+                                                                ["--res-client" as any]: clientColor,
+                                                            }}
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                className={cn(
+                                                                    styles.reservedBlock,
+                                                                    st === "pagada" && styles.reservedBlockPaid,
+                                                                    endingSoon && styles.reservedBlockEndingSoon
+                                                                )}
+                                                                onClick={() => openEditReservation(res)}
+                                                                aria-label="Reservado"
+                                                                title="Reservado"
+                                                            >
+                                                                <span className={styles.reservedLabel}>Reservado</span>
+                                                                <span className={styles.reservedName}>{clientName}</span>
+                                                                <span
+                                                                    className={cn(
+                                                                        styles.reservedStatus,
+                                                                        st === "pagada" && styles.reservedStatusOk,
+                                                                        st === "parcial" && styles.reservedStatusWarn,
+                                                                        st === "cancelada" && styles.reservedStatusOff,
+                                                                        st === "pendiente" && styles.reservedStatusPending
+                                                                    )}
+                                                                >
+                                                                    {statusText}
+                                                                </span>
+                                                            </button>
                                                         </div>
+                                                    );
+                                                }
+
+                                                if (isPast) {
+                                                    return (
+                                                        <div
+                                                            key={`${slot}-${c.id}`}
+                                                            className={cn(styles.gridSlot, styles.gridSlotPast)}
+                                                        >
+                                                            <span className={styles.slotFreeHint}>Horario pasado</span>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div key={`${slot}-${c.id}`} className={cn(styles.gridSlot, styles.gridSlotFree)}>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.slotButton}
+                                                            onClick={() => openNewReservationForCourt(c.id, slot)}
+                                                        >
+                                                            <span className={styles.slotFreeHint}>Disponible</span>
+                                                            <span className={styles.slotPlus} aria-hidden="true">
+                                                                <svg className={styles.icon} viewBox="0 0 24 24">
+                                                                    <path d="M12 5v14M5 12h14" />
+                                                                </svg>
+                                                            </span>
+                                                        </button>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                                );
+                                            })}
+                                        </Fragment>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

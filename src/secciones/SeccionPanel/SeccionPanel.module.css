@@ -165,6 +165,157 @@
     box-shadow: var(--sombra-glow);
 }
 
+.historialCard {
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xl);
+    padding: 20px;
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    box-shadow: var(--sombra-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.historialHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.historialTitle {
+    margin: 4px 0 0;
+    font-weight: 950;
+    color: var(--azulMarino);
+    font-size: 20px;
+}
+
+.historialMeta {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.historialActions {
+    padding-top: 8px;
+}
+
+.historialSubtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.historialFilters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.historialFilterField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.historialFilterField input {
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 8px 10px;
+    min-width: 160px;
+    background: rgba(15, 23, 42, 0.02);
+    font-size: 14px;
+}
+
+.historialExports {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.historialTableWrapper {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid var(--borde);
+}
+
+.historialTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.historialTable th,
+.historialTable td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--borde);
+}
+
+.historialTable th {
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--azulMarino);
+}
+
+.historialTable td:last-child {
+    min-width: 110px;
+}
+
+.historialTable tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.03);
+}
+
+.historialStatus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: capitalize;
+}
+
+.estado-active {
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
+}
+
+.estado-pendiente {
+    background: rgba(234, 179, 8, 0.12);
+    color: #92400e;
+}
+
+.estado-pagada {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0c4a6e;
+}
+
+.estado-parcial {
+    background: rgba(79, 70, 229, 0.12);
+    color: #4338ca;
+}
+
+.estado-cancelada {
+    background: rgba(244, 63, 94, 0.12);
+    color: #831843;
+}
+
+.historialEmpty {
+    text-align: center;
+    padding: 24px;
+    font-weight: 700;
+    color: var(--muted);
+}
+
 .sidebarNav {
     border-top: 1px solid var(--borde);
     padding-top: 12px;
@@ -288,6 +439,36 @@
     max-width: 320px;
 }
 
+.trialCallout {
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    background: rgba(251, 191, 36, 0.08);
+    padding: 10px 12px;
+    border-radius: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    justify-content: space-between;
+}
+
+.trialText {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #92400e;
+    flex: 1;
+}
+
+.trialBtn {
+    padding: 6px 16px;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-decoration: none;
+    margin-left: auto;
+}
+
 /* Chip base */
 .planChip {
     display: inline-flex;
@@ -338,6 +519,15 @@
 
 .planChipPro .planChipValue {
     color: var(--moradoAcento);
+}
+
+.planChipProTrial {
+    border-color: rgba(251, 191, 36, 0.40);
+    background: rgba(251, 191, 36, 0.12);
+}
+
+.planChipProTrial .planChipValue {
+    color: #92400e;
 }
 
 /* ===== Tabs ===== */

@@ -19,9 +19,25 @@ export type Role = "usuario" | "propietario" | "admin";
 
 export type PlanActual = {
     plan_id: number;
-    plan_name: string;
-    status: "active" | "inactive" | "past_due" | "canceled";
-    current_period_end?: string | null;
+    plan_codigo?: string | null;
+    plan_nombre?: string | null;
+    estado?: string | null;
+    inicio?: string | null;
+    fin?: string | null;
+    dias_restantes?: number | null;
+};
+
+type HistorialRegistro = {
+    id: number;
+    cliente: string;
+    cancha: string;
+    fecha: string;
+    hora_inicio: string;
+    hora_fin: string;
+    estado: string;
+    precio: number;
+    startAt?: string | null;
+    endAt?: string | null;
 };
 
 export type Perfil = {
@@ -54,6 +70,25 @@ function normalizeStatus(st?: string | null) {
     return String(st || "active").toLowerCase();
 }
 
+function formatMoney(value?: number | null) {
+    if (typeof value === "number") {
+        return `S/ ${value.toFixed(2)}`;
+    }
+    return "S/ 0.00";
+}
+
+function formatDateLabel(value?: string | null) {
+    if (!value) return "-";
+    const d = new Date(value);
+    return d.toLocaleDateString("es-PE");
+}
+
+function formatTimeLabel(value?: string | null) {
+    if (!value) return "-";
+    const d = new Date(value);
+    return d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+}
+
 const ICON_BY_TAB: Record<string, string> = {
     perfil: "bi-person",
     "mi-complejo": "bi-building",
@@ -62,6 +97,11 @@ const ICON_BY_TAB: Record<string, string> = {
     historial: "bi-clock-history",
     admin: "bi-shield-check",
 };
+
+const WHATSAPP_PAY_URL =
+    "https://wa.me/51922023667?text=Hola%20CanchasPro%2C%20quiero%20pagar%20mi%20plan%20PRO";
+
+const TRIAL_PAYMENT_LABEL = "S/ 69.90";
 
 export default function SeccionPanel({
     token: tokenProp,
@@ -99,6 +139,16 @@ export default function SeccionPanel({
     const [perfil, setPerfil] = useState<Perfil | null>(() => perfilProp ?? null);
     const [plan, setPlan] = useState<PlanActual | null>(null);
     const [planLoading, setPlanLoading] = useState(true);
+    const [historial, setHistorial] = useState<HistorialRegistro[]>([]);
+    const [historialLoading, setHistorialLoading] = useState(false);
+    const [historialError, setHistorialError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterDateStart, setFilterDateStart] = useState("");
+    const [filterDateEnd, setFilterDateEnd] = useState("");
+    const emisionLabel = useMemo(
+        () => new Date().toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" }),
+        []
+    );
 
     useEffect(() => {
         if (perfilProp) setPerfil(perfilProp);
@@ -133,10 +183,32 @@ export default function SeccionPanel({
         );
     }, [nombreCompleto, perfil?.business_name, perfil?.username, perfil?.email]);
 
+    const normalizedPlanStatus = normalizeStatus(plan?.estado);
+    const showTrialCallout =
+        isPro && normalizedPlanStatus === "activa" && plan?.dias_restantes != null && plan.dias_restantes > 0;
     const planLabel = useMemo(() => {
         if (planLoading) return "...";
-        return isPro ? "PRO" : "FREE";
-    }, [isPro, planLoading]);
+        if (!isPro) return "FREE";
+        return showTrialCallout ? "TRIAL" : "PRO";
+    }, [isPro, planLoading, showTrialCallout]);
+    const planChipLabelText = planLoading
+        ? "PLAN"
+        : isPro
+            ? showTrialCallout
+                ? "PLAN PRO"
+                : "PLAN PRO"
+            : "PLAN FREE";
+    const planChipClass = cn(
+        styles.planChip,
+        planLoading && styles.planChipLoading,
+        !planLoading &&
+            (isPro
+                ? showTrialCallout
+                    ? styles.planChipProTrial
+                    : styles.planChipPro
+                : styles.planChipFree)
+    );
+    const trialDaysRemaining = showTrialCallout && plan?.dias_restantes != null ? plan.dias_restantes : null;
 
     useEffect(() => {
         if (!token) {
@@ -177,11 +249,37 @@ export default function SeccionPanel({
     }
 
     function handleSelectTab(nextTab: string) {
-        if (role === "propietario" && !isPro && (nextTab === "mis-canchas" || nextTab === "reservas")) {
+        if (
+            role === "propietario" &&
+            !isPro &&
+            (nextTab === "mis-canchas" || nextTab === "reservas" || nextTab === "historial")
+        ) {
             router.push("/plan-premium");
             return;
         }
         setTab(nextTab);
+    }
+
+    function buildHistorialExportQuery() {
+        const params = new URLSearchParams();
+        const term = searchTerm.trim();
+        if (term) params.set("search", term);
+        if (filterDateStart) params.set("fecha_inicio", filterDateStart);
+        if (filterDateEnd) params.set("fecha_fin", filterDateEnd);
+        const qs = params.toString();
+        return qs ? `?${qs}` : "";
+    }
+
+    function handleExportHistorial(format: "excel" | "pdf") {
+        const extension = format === "excel" ? "xlsx" : "pdf";
+        const url = `/panel-reservas/export/${extension}${buildHistorialExportQuery()}`;
+        window.open(url, "_blank");
+    }
+
+    function resetHistorialFilters() {
+        setSearchTerm("");
+        setFilterDateStart("");
+        setFilterDateEnd("");
     }
 
     const tabs = useMemo(() => {
@@ -191,6 +289,7 @@ export default function SeccionPanel({
                 { key: "mi-complejo", label: "Mi Complejo", locked: false },
                 { key: "mis-canchas", label: "Mis Canchas", locked: !isPro },
                 { key: "reservas", label: "Reservas", locked: !isPro },
+                { key: "historial", label: "Historial", locked: !isPro },
             ];
         }
         if (role === "usuario") {
@@ -206,6 +305,79 @@ export default function SeccionPanel({
     useEffect(() => {
         if (!tabs.some((t) => t.key === tab)) setTab("perfil");
     }, [tabs, tab]);
+
+    const filteredHistorial = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
+        const startFilterDate = filterDateStart ? filterDateStart : null;
+        const endFilterDate = filterDateEnd ? filterDateEnd : null;
+
+        return historial.filter((row) => {
+            const normalized = `${row.cliente} ${row.cancha} ${row.estado}`.toLowerCase();
+            if (term && !normalized.includes(term)) return false;
+
+            if (!row.startAt) return false;
+            const rowDateStr = row.startAt.slice(0, 10);
+            if (startFilterDate && rowDateStr < startFilterDate) return false;
+            if (endFilterDate && rowDateStr > endFilterDate) return false;
+            return true;
+        });
+    }, [historial, searchTerm, filterDateStart, filterDateEnd]);
+
+    useEffect(() => {
+        if (role !== "propietario" || tab !== "historial" || !token) return;
+        let activo = true;
+        setHistorialLoading(true);
+        setHistorialError(null);
+        apiFetch<HistorialRegistro[]>("/panel/reservas", { token })
+            .then((data) => {
+                if (!activo) return;
+                const array = Array.isArray(data) ? data : [];
+                    const normalized = array.map((item) => {
+                        const start = (item as any).start_at || (item as any).fecha_inicio || null;
+                        const end = (item as any).end_at || (item as any).fecha_fin || null;
+                        const precioRaw = Number(
+                            (item as any).total_amount ?? (item as any).precio ?? (item as any).price ?? 0
+                        );
+                        const cliente =
+                        (item as any).nombre_cliente ||
+                        (item as any).client_name ||
+                        (item as any).cliente ||
+                        String(item.id || "-");
+                        return {
+                            id: item.id,
+                            cliente,
+                            cancha:
+                                (item as any).cancha_nombre ||
+                                (item as any).cancha?.nombre ||
+                                String((item as any).cancha_id || "-"),
+                            fecha: formatDateLabel(start),
+                            hora_inicio: formatTimeLabel(start),
+                            hora_fin: formatTimeLabel(end),
+                            estado: normalizeStatus(
+                                (item as any).estado ||
+                                (item as any).payment_status ||
+                                (item as any).status ||
+                                "pendiente"
+                            ),
+                            precio: Number.isFinite(precioRaw) ? precioRaw : 0,
+                            startAt: start,
+                            endAt: end,
+                        };
+                    });
+                setHistorial(normalized);
+            })
+            .catch((e: any) => {
+                if (!activo) return;
+                setHistorialError(e?.message || "No se pudo cargar el historial.");
+            })
+            .finally(() => {
+                if (!activo) return;
+                setHistorialLoading(false);
+            });
+        return () => {
+            activo = false;
+        };
+    }, [role, tab, token]);
 
     if (!token) {
         return (
@@ -301,14 +473,8 @@ export default function SeccionPanel({
 
                             <div className={styles.headerBtns}>
                                 <div className={styles.planWrap}>
-                                    <div
-                                        className={cn(
-                                            styles.planChip,
-                                            planLoading && styles.planChipLoading,
-                                            !planLoading && (isPro ? styles.planChipPro : styles.planChipFree)
-                                        )}
-                                    >
-                                        <span className={styles.planChipLabel}>Plan</span>
+                                    <div className={planChipClass}>
+                                        <span className={styles.planChipLabel}>{planChipLabelText}</span>
                                         <span className={styles.planChipValue}>{planLabel}</span>
                                     </div>
 
@@ -329,6 +495,24 @@ export default function SeccionPanel({
                             </div>
                         </div>
 
+                        {showTrialCallout ? (
+                            <div className={styles.trialCallout}>
+                                <p className={styles.trialText}>
+                                    {trialDaysRemaining === 1
+                                        ? "Queda 1 día de trial PRO."
+                                        : `Tu prueba PRO termina en ${trialDaysRemaining} días.`}
+                                </p>
+                                <a
+                                    className={`boton botonPrimario ${styles.trialBtn}`}
+                                    href={WHATSAPP_PAY_URL}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    PAGAR AHORA · {TRIAL_PAYMENT_LABEL}
+                                </a>
+                            </div>
+                        ) : null}
+
                         {error ? <div className={styles.alertError}>{error}</div> : null}
 
                         {cargando ? (
@@ -340,6 +524,131 @@ export default function SeccionPanel({
                                 {role === "propietario" && tab === "mi-complejo" ? <SeccionComplejos token={token} /> : null}
                                 {role === "propietario" && tab === "mis-canchas" ? <PanelCanchasPropietario token={token} /> : null}
                                 {role === "propietario" && tab === "reservas" ? <PanelReservasPropietario token={token} /> : null}
+                                {role === "propietario" && tab === "historial" ? (
+                                    <section className={`tarjeta ${styles.historialCard}`}>
+                                        <div className={styles.historialHeader}>
+                                            <div>
+                                                <p className={styles.kicker}>Historial de reservas</p>
+                                                <h2 className={styles.historialTitle}>Datos del propietario</h2>
+                                                <p className={styles.historialMeta}>
+                                                    {displayName} · Emitido {emisionLabel}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.historialActions}>
+                                            <p className={styles.historialSubtitle}>
+                                                Todas las reservas registradas con su estado, cliente, cancha, fecha y horario.
+                                            </p>
+                                        </div>
+
+                                        <div className={styles.historialFilters}>
+                                            <label className={styles.historialFilterField}>
+                                                <span>Buscar</span>
+                                                <input
+                                                    type="text"
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    placeholder="cliente, cancha o estado"
+                                                />
+                                            </label>
+                                            <label className={styles.historialFilterField}>
+                                                <span>Desde</span>
+                                                <input
+                                                    type="date"
+                                                    value={filterDateStart}
+                                                    onChange={(e) => setFilterDateStart(e.target.value)}
+                                                />
+                                            </label>
+                                            <label className={styles.historialFilterField}>
+                                                <span>Hasta</span>
+                                                <input
+                                                    type="date"
+                                                    value={filterDateEnd}
+                                                    onChange={(e) => setFilterDateEnd(e.target.value)}
+                                                />
+                                            </label>
+                                            <button
+                                                type="button"
+                                                className="boton botonSecundario"
+                                                onClick={resetHistorialFilters}
+                                            >
+                                                Limpiar filtros
+                                            </button>
+                                        </div>
+
+                                        <div className={styles.historialExports}>
+                                            <button
+                                                type="button"
+                                                className="boton botonPrimario"
+                                                onClick={() => handleExportHistorial("excel")}
+                                            >
+                                                Exportar Excel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="boton botonSecundario"
+                                                onClick={() => handleExportHistorial("pdf")}
+                                            >
+                                                Exportar PDF
+                                            </button>
+                                        </div>
+
+                                        {historialLoading ? (
+                                            <p className={styles.muted}>Cargando historial...</p>
+                                        ) : historialError ? (
+                                            <p className={styles.alertError}>{historialError}</p>
+                                        ) : (
+                                            <div className={styles.historialTableWrapper}>
+                                                <table className={styles.historialTable}>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Cliente</th>
+                                                            <th>Cancha</th>
+                                                            <th>Fecha</th>
+                                                            <th>Hora inicio</th>
+                                                            <th>Hora fin</th>
+                                                            <th>Precio</th>
+                                                            <th>Estado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {filteredHistorial.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={8} className={styles.historialEmpty}>
+                                                                    No hay reservas en el historial.
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            filteredHistorial.map((row, index) => (
+                                                                <tr key={`${row.id}-${index}`}>
+                                                                    <td>{index + 1}</td>
+                                                                    <td>{row.cliente}</td>
+                                                                    <td>{row.cancha}</td>
+                                                                    <td>{row.fecha}</td>
+                                                                    <td>{row.hora_inicio}</td>
+                                                                    <td>{row.hora_fin}</td>
+                                                                    <td>{formatMoney(row.precio)}</td>
+                                                                    <td>
+                                                                        <span
+                                                                            className={cn(
+                                                                                styles.historialStatus,
+                                                                                styles[`estado-${row.estado}` as any]
+                                                                            )}
+                                                                        >
+                                                                            {row.estado}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </section>
+                                ) : null}
 
                                 {tab === "perfil" ? (
                                     perfil ? (

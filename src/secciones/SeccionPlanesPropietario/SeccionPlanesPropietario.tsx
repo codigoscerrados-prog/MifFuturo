@@ -20,7 +20,7 @@ type PlanActual = {
 
 type Cell = boolean | string;
 
-const SOPORTE_WA = "51999999999";
+const SOPORTE_WA = "51922023667";
 const SOPORTE_WA_TEXT = "Hola CanchasPro, quiero el plan empresarial";
 
 function waUrl() {
@@ -146,7 +146,7 @@ export default function SeccionPlanesPropietario() {
                                                 <span className={styles.planName}>
                                                     <i className={`bi bi-stars ${styles.planIcon}`} aria-hidden="true"></i>Pro
                                                 </span>
-                                                <span className={styles.planPrice}>S/ 0.0y0 <span className={styles.smallMuted}>• 30 días gratis</span></span>
+                                                <span className={styles.planPrice}>S/ 0.00 <span className={styles.smallMuted}>• 30 días gratis</span></span>
                                                 <span className={styles.smallMuted}>Luego S/ 69.90 / mes</span>
                                                 <button className={`btn btn-primary btn-sm ${styles.ctaInline}`} onClick={activarProTrial} disabled={activando || isPro}>
                                                     {isPro ? "Ya activo" : activando ? "Activando…" : "Obtener PRO"}

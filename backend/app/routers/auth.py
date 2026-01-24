@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 import secrets
 import json
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
@@ -97,7 +97,10 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 
 
 @router.get("/google/login")
-def google_login():
+def google_login(
+    role: str | None = Query(default=None),
+    next: str | None = Query(default=None),
+):
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_REDIRECT_URI:
         raise HTTPException(status_code=500, detail="Google OAuth no configurado")
 
@@ -108,6 +111,17 @@ def google_login():
         "scope": "openid email profile",
         "prompt": "select_account",
     }
+    state_payload: dict[str, str] = {}
+    if role:
+        normalized_role = role.strip().lower()
+        if normalized_role in {"usuario", "propietario"}:
+            state_payload["role"] = normalized_role
+    if next:
+        state_payload["next"] = next
+
+    if state_payload:
+        params["state"] = json.dumps(state_payload)
+
     url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
     return RedirectResponse(url)
 
@@ -115,6 +129,7 @@ def google_login():
 @router.get("/google/callback")
 def google_callback(
     code: str = Query(...),
+    state: str | None = Query(default=None),
     mode: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
@@ -143,6 +158,23 @@ def google_callback(
     if not email:
         raise HTTPException(status_code=400, detail="Email no disponible")
 
+    requested_role = "usuario"
+    requested_next: str | None = None
+    if state:
+        try:
+            state_payload = json.loads(state)
+            if isinstance(state_payload, dict):
+                candidate = state_payload.get("role")
+                if isinstance(candidate, str):
+                    candidate = candidate.strip().lower()
+                    if candidate in {"usuario", "propietario"}:
+                        requested_role = candidate
+                next_candidate = state_payload.get("next")
+                if isinstance(next_candidate, str) and next_candidate.strip():
+                    requested_next = next_candidate.strip()
+        except Exception:
+            pass
+
     u = db.query(User).filter(User.email == email).first()
     created = False
     if not u:
@@ -150,7 +182,7 @@ def google_callback(
         first_name = (userinfo.get("given_name") or "Usuario").strip() or "Usuario"
         last_name = (userinfo.get("family_name") or "Google").strip() or "Google"
         u = User(
-            role="usuario",
+            role=requested_role,
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -204,10 +236,15 @@ def google_callback(
 
     token = crear_token(u.id, u.role)
     if mode == "json":
-        return {"access_token": token, "token_type": "bearer", "needs_profile": created}
+        response = {"access_token": token, "token_type": "bearer", "needs_profile": created}
+        if requested_next:
+            response["next"] = requested_next
+        return response
 
     frontend = settings.FRONTEND_ORIGIN.rstrip("/")
     redirect_url = f"{frontend}/auth/callback/google?token={token}&needs_profile={'1' if created else '0'}"
+    if requested_next:
+        redirect_url += f"&next={quote(requested_next, safe='/:?&=')}"
     return RedirectResponse(redirect_url)
 
 

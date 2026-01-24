@@ -535,7 +535,7 @@
     border-radius: var(--radio-xl);
     background: var(--blanco);
     box-shadow: var(--sombra-sm);
-    height: min(72vh, 720px);
+    max-height: min(72vh, 720px);
     width: 100%;
     min-width: 0;
     overflow-y: auto;
@@ -570,24 +570,103 @@
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
 }
 
-.timelineGrid {
-    --court-count: 1;
-    --time-col: 170px;
-    display: inline-block;
-    min-width: max(100%, calc(var(--time-col) + (var(--court-count) * 180px)));
+.agendaGrid {
+    display: grid;
+    gap: 0;
     width: max-content;
+    min-width: 100%;
 }
 
-.timelineHeaderRow {
+.gridCorner {
     position: sticky;
     top: 0;
     z-index: 3;
-    display: grid;
-    grid-template-columns: var(--time-col) repeat(var(--court-count), 180px);
-    min-width: 100%;
-    width: max-content;
+    padding: 12px 10px;
+    font-weight: 950;
+    color: var(--azulMarino);
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--borde);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+}
+
+.gridTime {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 12px 10px;
+    font-weight: 900;
+    color: var(--azulMarino);
     background: linear-gradient(180deg, var(--blanco), var(--superficie));
     border-bottom: 1px solid var(--borde);
+    border-left: 1px solid var(--borde);
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+.gridCourtLabel {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    padding: 12px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 950;
+    color: var(--azulMarino);
+    background: linear-gradient(180deg, var(--blanco), var(--superficie));
+    border-top: 1px solid var(--borde);
+    border-right: 1px solid var(--borde);
+    min-height: 90px;
+}
+
+.gridCourtLabelActive {
+    border-color: rgba(37, 99, 235, .35);
+    box-shadow: inset -4px 0 0 rgba(37, 99, 235, .15);
+}
+
+.gridCourtDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+}
+
+.gridCourtName {
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gridHourColumn {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+}
+
+.gridSlot {
+    border-top: 1px solid var(--borde);
+    border-left: 1px solid var(--borde);
+    padding: 6px;
+    min-height: 80px;
+    display: flex;
+    align-items: stretch;
+    background: var(--blanco);
+    position: relative;
+}
+
+.gridSlotReserved {
+    padding: 3px;
+}
+
+.gridSlotPast {
+    align-items: center;
+    justify-content: center;
+}
+
+.gridSlotFree {
+    padding: 4px;
 }
 
 .timelineCorner {
@@ -780,6 +859,40 @@
     border-color: rgba(15, 23, 42, .18);
     background: rgba(15, 23, 42, .04);
     color: var(--azulMarino);
+}
+
+.reservedBlockPaid {
+    border-color: rgba(148, 163, 184, .35);
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(148, 163, 184, .2),
+        rgba(148, 163, 184, .2) 6px,
+        rgba(148, 163, 184, .05) 6px,
+        rgba(148, 163, 184, .05) 12px
+    );
+    color: rgba(51, 65, 85, .85);
+}
+
+.reservedBlockEndingSoon {
+    animation: reservedPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes reservedPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, .25);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+.reservedBlockPaid {
+    border-color: rgba(148, 163, 184, .35);
+    background: rgba(148, 163, 184, .15);
+    color: rgba(51, 65, 85, .85);
 }
 
 .slotHalfPast {

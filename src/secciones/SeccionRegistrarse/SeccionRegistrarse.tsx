@@ -137,20 +137,40 @@ export default function SeccionRegistrarse({
                 ? "Registra tu complejo y empieza a recibir reservas desde tu panel."
                 : "Crea tu cuenta para reservar canchas en minutos.");
 
-    function oauthUrl(path: string) {
+    function oauthUrl(path: string, params?: Record<string, string | undefined>) {
         const origin = (process.env.NEXT_PUBLIC_API_ORIGIN || "").replace(/\/$/, "");
-        if (origin) return `${origin}${path}`;
-        try {
-            const u = new URL(apiUrl("/"));
-            u.pathname = u.pathname.replace(/\/api\/?$/, "");
-            u.search = "";
-            u.hash = "";
-            return `${u.toString().replace(/\/$/, "")}${path}`;
-        } catch {
-            return path;
+        let target: string;
+        if (origin) {
+            target = `${origin}${path}`;
+        } else {
+            try {
+                const u = new URL(apiUrl("/"));
+                u.pathname = u.pathname.replace(/\/api\/?$/, "");
+                u.search = "";
+                u.hash = "";
+                target = `${u.toString().replace(/\/$/, "")}${path}`;
+            } catch {
+                target = path;
+            }
         }
+
+        if (params) {
+            const query = new URLSearchParams();
+            Object.entries(params).forEach(([key, value]) => {
+                if (value != null && value !== "") {
+                    query.set(key, value);
+                }
+            });
+
+            if (query.toString()) {
+                target = `${target}${target.includes("?") ? "&" : "?"}${query.toString()}`;
+            }
+        }
+
+        return target;
     }
 
+    const googleNextPath = role === "propietario" ? "/panel/planes" : rutaPorRole(role);
     const seccionClass = compact ? `${styles.seccion} ${styles.compact}` : styles.seccion;
 
     return (
@@ -175,7 +195,12 @@ export default function SeccionRegistrarse({
                             <button
                                 type="button"
                                 className={`boton botonPrimario ${styles.btnGoogle}`}
-                                onClick={() => (window.location.href = oauthUrl("/auth/google/login"))}
+                                onClick={() =>
+                                    (window.location.href = oauthUrl("/auth/google/login", {
+                                        role,
+                                        next: googleNextPath,
+                                    }))
+                                }
                             >
                                 <span className={styles.googleIcon} aria-hidden="true">
                                     <svg viewBox="0 0 48 48" role="presentation" focusable="false">
@@ -217,7 +242,11 @@ export default function SeccionRegistrarse({
                                 <button
                                     type="button"
                                     className={`${styles.rolBtn} ${role === "propietario" ? styles.rolOn : ""}`}
-                                    onClick={() => setRole("propietario")}
+                                    onClick={() => {
+                                        const next = role === "propietario" ? "/panel/planes" : "/panel";
+                                        window.location.href = `/api/auth/google/login?role=${role}&next=${encodeURIComponent(next)}`;
+                                    }}
+
                                     aria-pressed={role === "propietario"}
                                 >
                                     Propietario

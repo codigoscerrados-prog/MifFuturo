@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 from pathlib import Path
 import uuid
@@ -16,7 +17,7 @@ from reportlab.pdfgen import canvas
 from app.core.deps import get_db, require_role, get_usuario_actual
 from app.core.images import resize_square_image
 from app.core.slug import slugify
-from app.modelos.modelos import Complejo, Cancha, CanchaImagen, Reserva, Plan, Suscripcion
+from app.modelos.modelos import Complejo, Cancha, CanchaImagen, Reserva, Plan, Suscripcion, User
 from app.esquemas.esquemas import (
     ComplejoCrear,
     ComplejoActualizar,
@@ -90,6 +91,42 @@ def owner_filter_reservas(q, u):
         .join(Complejo, Cancha.complejo_id == Complejo.id)
         .filter(Complejo.owner_id == u.id)
     )
+
+
+def _apply_reserva_search(q, search: str | None):
+    if not search:
+        return q
+    term = f"%{search.strip().lower()}%"
+    q = q.outerjoin(User, Reserva.cliente)
+    return q.filter(
+        or_(
+            func.lower(User.username).like(term),
+            func.lower(User.first_name).like(term),
+            func.lower(User.last_name).like(term),
+            func.lower(Reserva.payment_status).like(term),
+            Reserva.cancha.has(Cancha.nombre.ilike(term)),
+        )
+    )
+
+
+def _apply_reserva_fecha(q, fecha: date | None, fecha_inicio: date | None, fecha_fin: date | None):
+    start = None
+    end = None
+    if fecha_inicio:
+        start = datetime(fecha_inicio.year, fecha_inicio.month, fecha_inicio.day, 0, 0, 0)
+    if fecha_fin:
+        end = datetime(fecha_fin.year, fecha_fin.month, fecha_fin.day, 23, 59, 59)
+    if fecha and not (fecha_inicio or fecha_fin):
+        start = datetime(fecha.year, fecha.month, fecha.day, 0, 0, 0)
+        end = datetime(fecha.year, fecha.month, fecha.day, 23, 59, 59)
+
+    if start and end:
+        return q.filter(Reserva.start_at <= end, Reserva.end_at >= start)
+    if start:
+        return q.filter(Reserva.end_at >= start)
+    if end:
+        return q.filter(Reserva.start_at <= end)
+    return q
 
 
 def reserva_dict(r: Reserva):
@@ -435,6 +472,9 @@ def actualizar_cancha(
 def listar_reservas(
     cancha_id: int | None = Query(default=None),
     fecha: date | None = Query(default=None),
+    fecha_inicio: date | None = Query(default=None),
+    fecha_fin: date | None = Query(default=None),
+    search: str | None = Query(default=None),
     db: Session = Depends(get_db),
     u=Depends(get_usuario_actual),
 ):
@@ -449,10 +489,8 @@ def listar_reservas(
     if cancha_id is not None:
         q = q.filter(Reserva.cancha_id == cancha_id)
 
-    if fecha is not None:
-        start = datetime(fecha.year, fecha.month, fecha.day, 0, 0, 0)
-        end = datetime(fecha.year, fecha.month, fecha.day, 23, 59, 59)
-        q = q.filter(Reserva.start_at <= end, Reserva.end_at >= start)
+    q = _apply_reserva_fecha(q, fecha, fecha_inicio, fecha_fin)
+    q = _apply_reserva_search(q, search)
 
     rows = q.order_by(Reserva.start_at.asc()).all()
     return [reserva_dict(r) for r in rows]
@@ -591,14 +629,15 @@ def export_reservas_excel(
     db: Session = Depends(get_db),
     u=Depends(get_usuario_actual),
     fecha: date | None = Query(default=None),
+    fecha_inicio: date | None = Query(default=None),
+    fecha_fin: date | None = Query(default=None),
+    search: str | None = Query(default=None),
 ):
     q = db.query(Reserva)
     q = owner_filter_reservas(q, u)
 
-    if fecha is not None:
-        start = datetime(fecha.year, fecha.month, fecha.day, 0, 0, 0)
-        end = datetime(fecha.year, fecha.month, fecha.day, 23, 59, 59)
-        q = q.filter(Reserva.start_at <= end, Reserva.end_at >= start)
+    q = _apply_reserva_fecha(q, fecha, fecha_inicio, fecha_fin)
+    q = _apply_reserva_search(q, search)
 
     rows = q.order_by(Reserva.start_at.asc()).all()
 
@@ -649,14 +688,15 @@ def export_reservas_pdf(
     db: Session = Depends(get_db),
     u=Depends(get_usuario_actual),
     fecha: date | None = Query(default=None),
+    fecha_inicio: date | None = Query(default=None),
+    fecha_fin: date | None = Query(default=None),
+    search: str | None = Query(default=None),
 ):
     q = db.query(Reserva)
     q = owner_filter_reservas(q, u)
 
-    if fecha is not None:
-        start = datetime(fecha.year, fecha.month, fecha.day, 0, 0, 0)
-        end = datetime(fecha.year, fecha.month, fecha.day, 23, 59, 59)
-        q = q.filter(Reserva.start_at <= end, Reserva.end_at >= start)
+    q = _apply_reserva_fecha(q, fecha, fecha_inicio, fecha_fin)
+    q = _apply_reserva_search(q, search)
 
     rows = q.order_by(Reserva.start_at.asc()).all()
 

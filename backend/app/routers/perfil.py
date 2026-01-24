@@ -97,12 +97,30 @@ def mi_plan(db: Session = Depends(get_db), u: User = Depends(get_usuario_actual)
     if s.fin and s.fin <= now and s.estado == "activa":
         s.estado = "cancelada"
         db.add(s)
-        db.commit()
 
         free = db.query(Plan).filter(Plan.codigo == "free").first() or db.query(Plan).filter(Plan.id == 1).first()
         if not free:
             raise HTTPException(status_code=500, detail="No existe el plan FREE")
-        return PlanActualOut(plan_id=free.id, plan_codigo=free.codigo, plan_nombre=free.nombre, estado="activa")
+
+        nuevo = Suscripcion(
+            user_id=u.id,
+            plan_id=free.id,
+            estado="activa",
+            inicio=now,
+        )
+        db.add(nuevo)
+
+        db.commit()
+        db.refresh(nuevo)
+
+        return PlanActualOut(
+            plan_id=free.id,
+            plan_codigo=free.codigo,
+            plan_nombre=free.nombre,
+            estado=nuevo.estado,
+            inicio=nuevo.inicio,
+            fin=nuevo.fin,
+        )
 
     dias = None
     if s.fin:
