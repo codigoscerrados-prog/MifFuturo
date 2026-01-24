@@ -31,8 +31,9 @@ def _parse_origins(value: str) -> list[str]:
     return [origin.strip() for origin in value.split(",") if origin.strip()]
 
 allowed_origins = _parse_origins(settings.CORS_ORIGINS) or [
+    "https://miffuturo.onrender.com",
+    "https://miffuturo-frontend.onrender.com",  # por si usas el otro
     "http://localhost:3000",
-    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
