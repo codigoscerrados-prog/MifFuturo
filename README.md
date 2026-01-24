@@ -72,6 +72,12 @@ https://miffuturo.onrender.com
   3. Inserta/actualiza departamentos/provincias/distritos sin duplicar registros. Si ocurre un fallo HTTP (404 u otro), solo se loggea y el deploy continúa.
 - Si necesitas recargarlo a mano, usa el endpoint admin `POST /admin/ubigeo/import` (multipart/JSON) con `replace=true`.
 
+### Paid plans
+
+- `init_db()` (llamado en cada arranque y también disponible como `python -m app.db.init_db`) asegura que la tabla `planes` contenga los registros `Plan Free` y `Plan Pro` antes de que la aplicación sirva las rutas `/panel/planes` o `activar-pro-trial`. El `Plan Pro` es el que se activa con `/perfil/plan/activar-pro-trial` y equivale a la fila con `codigo=pro`.
+- Si quieres insertar o ajustar planes de forma manual en Render, ejecuta `python -m app.db.init_db` dentro del servicio backend apuntando a la misma `DATABASE_URL`; ese comando vuelve a crear tablas, resetea el seed de planes y no duplica registros recordando el código de cada plan.
+- El plan PRO ofrece 30 días gratis (valor visible en la UI, luego `S/ 69.90` al mes) y habilita reservas, reportes, soporte prioritario y la gestión de canchas descrita en el tablero de Propietarios.
+
 ### Build notes
 
 - El frontend depende de `/api` sin CORS, por eso el proxy (`next.config.mjs`) y los helpers en `src/lib/api.ts` son la forma recomendada de hacer peticiones.

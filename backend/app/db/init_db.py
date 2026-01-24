@@ -9,6 +9,17 @@ from app.scripts.bootstrap_db import bootstrap_ubigeo
 logger = logging.getLogger(__name__)
 
 
+def _ensure_plan(db_session, codigo: str, defaults: dict) -> Plan:
+    plan = db_session.query(Plan).filter(Plan.codigo == codigo).first()
+    if plan:
+        return plan
+    plan = Plan(codigo=codigo, **defaults)
+    db_session.add(plan)
+    db_session.commit()
+    db_session.refresh(plan)
+    return plan
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     try:
@@ -17,17 +28,25 @@ def init_db() -> None:
         logger.warning("Bootstrap ubigeo failed: %s", exc)
 
     with SessionLocal() as db:
-        existing = db.query(Plan).filter(Plan.codigo == "free").first()
-        if existing:
-            return
-
-        free_plan = Plan(
-            codigo="free",
-            nombre="Plan Free",
-            precio_mensual=0,
-            limite_canchas=1,
-            permite_estadisticas=False,
-            permite_marketing=False,
+        _ensure_plan(
+            db,
+            "free",
+            {
+                "nombre": "Plan Free",
+                "precio_mensual": 0,
+                "limite_canchas": 1,
+                "permite_estadisticas": False,
+                "permite_marketing": False,
+            },
         )
-        db.add(free_plan)
-        db.commit()
+        _ensure_plan(
+            db,
+            "pro",
+            {
+                "nombre": "Plan Pro",
+                "precio_mensual": 69.9,
+                "limite_canchas": 3,
+                "permite_estadisticas": True,
+                "permite_marketing": True,
+            },
+        )
