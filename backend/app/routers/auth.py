@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.seguridad import hash_password, verify_password, crear_token
 from app.core.email import send_email_code
 from app.modelos.modelos import User, Plan, Suscripcion, LoginOtp
+from app.utils.mailer import send_email
 from app.esquemas.esquemas import (
     UsuarioCrear,
     UsuarioOut,
@@ -49,7 +50,7 @@ def _get_json(url: str, headers: dict | None = None) -> dict:
 
 
 @router.post("/register", response_model=UsuarioOut)
-def register(payload: UsuarioCrear, db: Session = Depends(get_db)):
+ def register(payload: UsuarioCrear, db: Session = Depends(get_db), background_tasks: BackgroundTasks):
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email ya registrado")
 
@@ -77,6 +78,27 @@ def register(payload: UsuarioCrear, db: Session = Depends(get_db)):
 
         db.commit()
         db.refresh(u)
+        registered_at = datetime.now(timezone.utc)
+        background_tasks.add_task(
+            send_email,
+            u.email,
+            "¡Bienvenido/a! Tu cuenta fue creada",
+            f"Hola {u.first_name or u.email},\n\nGracias por registrarte en Proyecto Canchas. Tu cuenta fue creada correctamente en {registered_at.isoformat()}.\n\nNos alegra tenerte con nosotros.\n\nSaludos,\nEquipo Proyecto Canchas",
+        )
+        if settings.ADMIN_NOTIFY_EMAIL:
+            background_tasks.add_task(
+                send_email,
+                settings.ADMIN_NOTIFY_EMAIL,
+                "Nueva cuenta creada",
+                (
+                    f"Se registró una nueva cuenta en Proyecto Canchas:\n\n"
+                    f"ID: {u.id}\n"
+                    f"Nombre: {u.first_name or '—'} {u.last_name or ''}\n"
+                    f"Email: {u.email}\n"
+                    f"Rol: {u.role}\n"
+                    f"Registrado en: {registered_at.isoformat()}"
+                ),
+            )
         return u
     except HTTPException:
         db.rollback()

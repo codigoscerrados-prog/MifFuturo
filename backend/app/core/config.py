@@ -19,7 +19,9 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
     FROM_EMAIL: str = ""
+    SMTP_FROM: str = ""
     SMTP_USE_TLS: bool = True
+    ADMIN_NOTIFY_EMAIL: str = ""
 
     # ---- OAuth (Google) ----
     GOOGLE_CLIENT_ID: str = ""
