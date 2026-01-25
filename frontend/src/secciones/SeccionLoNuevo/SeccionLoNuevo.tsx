@@ -76,6 +76,7 @@ type ComplejoApi = {
     cafeteria?: boolean | null;
     foto_url?: string | null;
     owner_phone?: string | null;
+    owner_id?: number | null;
     canchas?: CanchaOut[];
 };
 
