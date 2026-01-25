@@ -98,6 +98,7 @@ type CanchaCard = {
 
     complejoFotoUrl: string | null;
     isActive: boolean;
+    horariosDisponibles?: string[];
 };
 
 type ComplejoCard = {
@@ -130,6 +131,24 @@ type ComplejoCard = {
 };
 
 const FALLBACK_IMG = "/canchas/sintetico-marconi.avif";
+const DEFAULT_HORARIOS = [
+    "06:00",
+    "07:00",
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+    "19:00",
+    "20:00",
+    "21:00",
+];
 
 function normalizarTexto(v?: string | null) {
     return (v || "").toLowerCase().trim();
@@ -312,6 +331,7 @@ function mapComplejosFromApi(complejos: ComplejoApi[], fallbackImg: string): Com
                     complejoNombre: cx.nombre,
                     complejoFotoUrl: complejoFoto,
                     isActive: !!c.is_active,
+                    horariosDisponibles: c.horariosDisponibles ?? undefined,
                 };
             });
 
@@ -389,6 +409,22 @@ export default function BusquedaDeCancha({
     const [detalleComplejo, setDetalleComplejo] = useState<ComplejoCard | null>(null);
 
     const modalAbierto = reservaOpen || detalleOpen;
+
+    const canchaSeleccionada = useMemo(() => {
+        if (!reservaComplejo) return null;
+        if (!reservaComplejo.verificado) return null;
+        if (reservaCanchaId) {
+            const match = reservaComplejo.canchas.find((c) => c.id === reservaCanchaId);
+            if (match) return match;
+        }
+        return reservaComplejo.canchas[0] || null;
+    }, [reservaComplejo, reservaCanchaId]);
+
+    const horariosDisponiblesModal = useMemo(() => {
+        return canchaSeleccionada?.horariosDisponibles?.length
+            ? canchaSeleccionada.horariosDisponibles
+            : DEFAULT_HORARIOS;
+    }, [canchaSeleccionada]);
 
     // ✅ bloquear scroll + cerrar con ESC
     useEffect(() => {
@@ -1019,6 +1055,25 @@ export default function BusquedaDeCancha({
                                     <option value="4">4 horas</option>
                                 </select>
                             </label>
+                            {horariosDisponiblesModal.length > 0 && (
+                                <div className={styles.modalField}>
+                                    <span className={styles.modalLabel}>Horarios disponibles</span>
+                                    <div className="d-flex flex-wrap gap-2">
+                                        {horariosDisponiblesModal.map((hora) => (
+                                            <button
+                                                key={hora}
+                                                type="button"
+                                                className={`btn btn-sm rounded-pill ${
+                                                    reservaHora === hora ? "btn-success" : "btn-outline-secondary"
+                                                }`}
+                                                onClick={() => setReservaHora(hora)}
+                                            >
+                                                {hora}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className={`d-flex justify-content-end gap-2 flex-wrap ${styles.modalBtns}`}>
