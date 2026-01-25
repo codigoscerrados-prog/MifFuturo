@@ -469,16 +469,6 @@ export default function BusquedaDeCancha({
         return () => ac.abort();
     }, [canchaSeleccionada, reservaFecha, reservaHora]);
 
-    const canchaSeleccionada = useMemo(() => {
-        if (!reservaComplejo) return null;
-        if (!reservaComplejo.verificado) return null;
-        if (reservaCanchaId) {
-            const match = reservaComplejo.canchas.find((c) => c.id === reservaCanchaId);
-            if (match) return match;
-        }
-        return reservaComplejo.canchas[0] || null;
-    }, [reservaComplejo, reservaCanchaId]);
-
     // ✅ bloquear scroll + cerrar con ESC
     useEffect(() => {
         if (!modalAbierto) return;
