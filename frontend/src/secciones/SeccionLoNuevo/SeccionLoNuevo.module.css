@@ -130,6 +130,21 @@
   font-weight: 600;
 }
 
+.geoStatus {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.geoRetry {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
 .carrusel {
   display: grid;
   grid-auto-flow: column;
@@ -290,6 +305,15 @@
   flex-wrap: nowrap;
   position: relative;
   z-index: 1;
+}
+
+.reservaInfo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .cardFooter {

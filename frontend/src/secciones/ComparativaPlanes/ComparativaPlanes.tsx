@@ -1,7 +1,7 @@
 import Link from "next/link";
 import styles from "./ComparativaPlanes.module.css";
 
-const RUTA_CTA = "/registrarse";
+const RUTA_CTA = "/registrarse/propietario";
 
 const FILAS = [
     { label: "Destacado en la portada", free: false, premium: true },

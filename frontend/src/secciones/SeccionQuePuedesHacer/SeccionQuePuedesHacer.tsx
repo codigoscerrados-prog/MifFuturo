@@ -91,7 +91,7 @@ export default function SeccionQuePuedesHacer() {
                                 </ul>
 
                                 <div className={styles.cta}>
-                                    <Link className="btn btn-primary" href="/registrarse">
+                                    <Link className="btn btn-primary" href="/registrarse/propietario">
                                         Publicar mi cancha
                                     </Link>
                                 </div>

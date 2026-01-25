@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./SeccionLoNuevo.module.css";
 import { apiFetch, mediaUrl } from "@/lib/api";
+import { haversineDistanceKm } from "@/utils/distance";
+import { LatLng, useGeolocation } from "@/utils/hooks/useGeolocation";
 
 type ComplejoFeatures = {
     techada?: boolean;
@@ -28,6 +30,11 @@ type Complejo = {
     propietarioPhone?: string | null;
     canchas: CanchaMini[];
     verificado: boolean;
+    owner_id?: number | null;
+    latitud?: number | null;
+    longitud?: number | null;
+    lat?: number | null;
+    lng?: number | null;
 };
 
 type CanchaOut = {
@@ -313,6 +320,9 @@ function mapComplejosFromApi(complejos: ComplejoApi[]) {
             provincia,
             distrito,
             fotoUrl: foto || DEFAULT_FOTO,
+            owner_id: cx.owner_id ?? null,
+            latitud: typeof cx.latitud === "number" ? cx.latitud : null,
+            longitud: typeof cx.longitud === "number" ? cx.longitud : null,
             precioMin,
             precioMax,
             features: {
@@ -331,12 +341,91 @@ function mapComplejosFromApi(complejos: ComplejoApi[]) {
     return items.slice(0, 6);
 }
 
+type ComplejoConCoordenadas = Complejo & {
+    lat?: number | null;
+    lng?: number | null;
+    complejo?: {
+        lat?: number | null;
+        lng?: number | null;
+    };
+};
+
+function obtenerCoordenadasDelItem(item: Complejo): LatLng | null {
+    const candidato = item as ComplejoConCoordenadas;
+    const lat =
+        typeof candidato.latitud === "number"
+            ? candidato.latitud
+            : typeof candidato.lat === "number"
+            ? candidato.lat
+            : typeof candidato.complejo?.lat === "number"
+            ? candidato.complejo.lat
+            : undefined;
+    const lng =
+        typeof candidato.longitud === "number"
+            ? candidato.longitud
+            : typeof candidato.lng === "number"
+            ? candidato.lng
+            : typeof candidato.complejo?.lng === "number"
+            ? candidato.complejo.lng
+            : undefined;
+    if (typeof lat === "number" && typeof lng === "number") {
+        return { lat, lng };
+    }
+    return null;
+}
+
+function ordenarPorDistancia(items: Complejo[], posicion: LatLng | null) {
+    if (!posicion) return items;
+
+    const enriquecidos = items.map<{
+        item: Complejo;
+        coords: LatLng | null;
+        index: number;
+    }>((item, index) => ({
+        item,
+        coords: obtenerCoordenadasDelItem(item),
+        index,
+    }));
+
+    const conCoords = enriquecidos
+        .filter((entry) => entry.coords)
+        .map((entry) => ({
+            ...entry,
+            distance: haversineDistanceKm(
+                posicion.lat,
+                posicion.lng,
+                entry.coords!.lat,
+                entry.coords!.lng
+            ),
+        }))
+        .sort((a, b) => {
+            if (a.distance === b.distance) {
+                return a.index - b.index;
+            }
+            return a.distance - b.distance;
+        });
+
+    const sinCoords = enriquecidos.filter((entry) => !entry.coords);
+
+    return [
+        ...conCoords.map((entry) => entry.item),
+        ...sinCoords.map((entry) => entry.item),
+    ];
+}
+
 export default function SeccionLoNuevo() {
     const carruselRef = useRef<HTMLDivElement | null>(null);
     const autoplayRef = useRef<number | null>(null);
     const [items, setItems] = useState<Complejo[]>([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState("");
+    const {
+        position,
+        loading: ubicacionCargando,
+        error: geoError,
+        permissionDenied,
+        requestLocation,
+    } = useGeolocation();
     const vacio = !cargando && items.length === 0;
     const [detalleOpen, setDetalleOpen] = useState(false);
     const [reservaOpen, setReservaOpen] = useState(false);
@@ -369,16 +458,22 @@ export default function SeccionLoNuevo() {
         };
     }, []);
 
+    const itemsOrdenados = useMemo(() => ordenarPorDistancia(items, position), [items, position]);
+
     const cards = useMemo<ComplejoCard[]>(() => {
         if (cargando || vacio) {
             return Array.from({ length: 6 }, (_, i) => ({ id: `s-${i}`, placeholder: true }));
         }
-        const base: ComplejoCard[] = [...items];
+        const base: ComplejoCard[] = [...itemsOrdenados];
         while (base.length < 6) {
             base.push({ id: `p-${base.length}`, placeholder: true });
         }
         return base.slice(0, 6);
-    }, [cargando, items, vacio]);
+    }, [cargando, itemsOrdenados, vacio]);
+
+    const showGeoStatus = ubicacionCargando || Boolean(geoError);
+    const showGeoRetryButton = !ubicacionCargando && (Boolean(geoError) || permissionDenied);
+    const geoStatusTexto = ubicacionCargando ? "Buscando canchas cerca…" : geoError;
 
     useEffect(() => {
         const prefersReduced =
@@ -520,6 +615,21 @@ export default function SeccionLoNuevo() {
                     <div className={styles.controles} aria-hidden="true" />
                 </div>
 
+                {showGeoStatus && (
+                    <div className={styles.geoStatus} role="status">
+                        <span>{geoStatusTexto}</span>
+                        {showGeoRetryButton && (
+                            <button
+                                type="button"
+                                className={`btn btn-sm btn-outline-primary ${styles.geoRetry}`}
+                                onClick={requestLocation}
+                            >
+                                Usar mi ubicación
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {error && <div className={styles.error}>{error}</div>}
                 {vacio && !error && <div className={styles.empty}>Aun no hay complejos recientes, vuelve pronto.</div>}
 
@@ -551,14 +661,18 @@ export default function SeccionLoNuevo() {
 
                         const precio = formatPrecio(card);
                         const chips = FEATURES.filter((f) => card.features?.[f.key]);
+                        const tieneOwner = Boolean(card.owner_id);
+                        const esEstandar = !card.verificado;
+                        const mostrarReservar = tieneOwner && !esEstandar;
+                        const reservaMensaje = tieneOwner ? "Administración no verificada" : "Disponible pronto";
 
                         return (
-                            <article key={card.id} className={`card ${styles.card}`}>
-                                <Link
-                                    href={`/${card.slug}`}
-                                    className={styles.cardMediaWrap}
-                                    aria-label={`Ver ${card.nombre}`}
-                                >
+                        <article key={card.id} className={`card ${styles.card}`}>
+                            <Link
+                                href={`/${card.slug}`}
+                                className={styles.cardMediaWrap}
+                                aria-label={`Ver ${card.nombre}`}
+                            >
                                     <img
                                         src={card.fotoUrl || DEFAULT_FOTO}
                                         alt={card.nombre}
@@ -569,50 +683,54 @@ export default function SeccionLoNuevo() {
                                         }}
                                     />
                                     <span className={styles.badgeNuevo}>Nuevo</span>
-                                    <span className={`${styles.badgeEstado} ${card.verificado ? styles.badgeOk : styles.badgeBase}`}>
-                                        <i className={`bi ${card.verificado ? "bi-shield-check" : "bi-shield"} me-1`} aria-hidden="true"></i>
-                                        {card.verificado ? "Verificado" : "Estandar"}
-                                    </span>
-                                </Link>
-                                <div className={styles.cardBody}>
-                                    <div className={styles.cardTop}>
-                                        <h3 className={styles.cardTitulo}>{card.nombre}</h3>
-                                        {card.zona && <span className={styles.zona}>{card.zona}</span>}
-                                    </div>
+                                            <span className={`${styles.badgeEstado} ${card.verificado ? styles.badgeOk : styles.badgeBase}`}>
+                                                <i className={`bi ${card.verificado ? "bi-shield-check" : "bi-shield"} me-1`} aria-hidden="true"></i>
+                                                {card.verificado ? "Verificado" : "Estandar"}
+                                            </span>
+                                        </Link>
+                                        <div className={styles.cardBody}>
+                                            <div className={styles.cardTop}>
+                                                <h3 className={styles.cardTitulo}>{card.nombre}</h3>
+                                                {card.zona && <span className={styles.zona}>{card.zona}</span>}
+                                            </div>
 
-                                    {chips.length > 0 && (
-                                        <div className={styles.chips}>
-                                            {chips.map((chip) => (
-                                                <span key={chip.key} className={styles.chip}>
-                                                    {chip.label}
-                                                </span>
-                                            ))}
+                                            {chips.length > 0 && (
+                                                <div className={styles.chips}>
+                                                    {chips.map((chip) => (
+                                                        <span key={chip.key} className={styles.chip}>
+                                                            {chip.label}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <div className={styles.cardFooter}>
+                                                <div className={styles.cardAcciones}>
+                                                    <Link
+                                                        href={`/${card.slug}`}
+                                                        className={`btn btn-outline-secondary btn-sm rounded-pill px-3 ${styles.btnDetalle}`}
+                                                    >
+                                                        <i className="bi bi-info-circle me-2" aria-hidden="true"></i>
+                                                        Ver detalles
+                                                    </Link>
+                                                    {mostrarReservar ? (
+                                                        <button
+                                                            type="button"
+                                                            className={`btn btn-success btn-sm rounded-pill px-3 ${styles.btnReservar}`}
+                                                            onClick={() => abrirReserva(card)}
+                                                        >
+                                                            <i className="bi bi-whatsapp me-2" aria-hidden="true"></i>
+                                                            Reservar
+                                                        </button>
+                                                    ) : (
+                                                        <span className={styles.reservaInfo}>{reservaMensaje}</span>
+                                                    )}
+                                                </div>
+
+                                                {precio && <div className={styles.precio}>{precio}</div>}
+                                            </div>
                                         </div>
-                                    )}
-
-                                    <div className={styles.cardFooter}>
-                                        <div className={styles.cardAcciones}>
-                                            <Link
-                                                href={`/${card.slug}`}
-                                                className={`btn btn-outline-secondary btn-sm rounded-pill px-3 ${styles.btnDetalle}`}
-                                            >
-                                                <i className="bi bi-info-circle me-2" aria-hidden="true"></i>
-                                                Ver detalles
-                                            </Link>
-                                            <button
-                                                type="button"
-                                                className={`btn btn-success btn-sm rounded-pill px-3 ${styles.btnReservar}`}
-                                                onClick={() => abrirReserva(card)}
-                                            >
-                                                <i className="bi bi-whatsapp me-2" aria-hidden="true"></i>
-                                                Reservar
-                                            </button>
-                                        </div>
-
-                                        {precio && <div className={styles.precio}>{precio}</div>}
-                                    </div>
-                                </div>
-                            </article>
+                                    </article>
                         );
                     })}
                 </div>

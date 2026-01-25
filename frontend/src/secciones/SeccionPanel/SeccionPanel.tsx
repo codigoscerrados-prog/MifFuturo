@@ -478,13 +478,15 @@ export default function SeccionPanel({
                                         <span className={styles.planChipValue}>{planLabel}</span>
                                     </div>
 
-                                    <span className={styles.planHint}>
-                                        {planLoading
-                                            ? "Verificando tu plan..."
-                                            : isPro
-                                                ? "Acceso completo a canchas y reservas."
-                                                : "Desbloquea Mis Canchas y Reservas con PRO."}
-                                    </span>
+                                    {role === "propietario" ? (
+                                        <span className={styles.planHint}>
+                                            {planLoading
+                                                ? "Verificando tu plan..."
+                                                : isPro
+                                                    ? "Acceso completo a canchas y reservas."
+                                                    : "Desbloquea Mis Canchas y Reservas con PRO."}
+                                        </span>
+                                    ) : null}
                                 </div>
 
                                 {role === "propietario" && !planLoading && !isPro ? (

@@ -390,12 +390,14 @@ export default function SeccionPerfil(props: SeccionPerfilProps) {
 
                         <div className={styles.divisor} />
 
-                        <div className={styles.hintBox}>
-                            <p className={styles.hintTitle}>Más visibilidad, más confianza, más reservas</p>
-                            <p className={styles.mutedSmall}>
-                                Gracias por confiar en <strong>nuestra plataforma</strong> para gestionar <strong>tu complejo</strong>. Estamos felices de ayudarte a <strong>organizar reservas</strong>, <strong>mostrar tu cancha</strong> y <strong>conectar con más equipos</strong> cada día.
-                            </p>
-                        </div>
+                        {role === "propietario" ? (
+                            <div className={styles.hintBox}>
+                                <p className={styles.hintTitle}>Más visibilidad, más confianza, más reservas</p>
+                                <p className={styles.mutedSmall}>
+                                    Gracias por confiar en <strong>nuestra plataforma</strong> para gestionar <strong>tu complejo</strong>. Estamos felices de ayudarte a <strong>organizar reservas</strong>, <strong>mostrar tu cancha</strong> y <strong>conectar con más equipos</strong> cada día.
+                                </p>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             )}
