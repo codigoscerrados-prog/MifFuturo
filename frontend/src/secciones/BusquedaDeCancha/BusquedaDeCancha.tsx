@@ -336,7 +336,6 @@ function mapComplejosFromApi(complejos: ComplejoApi[], fallbackImg: string): Com
                     complejoNombre: cx.nombre,
                     complejoFotoUrl: complejoFoto,
                     isActive: !!c.is_active,
-                    horariosDisponibles: c.horariosDisponibles ?? undefined,
                 };
             });
 
