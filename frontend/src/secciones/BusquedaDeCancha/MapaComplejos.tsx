@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -70,12 +70,13 @@ export default function MapaComplejos({
         return [-12.0464, -77.0428]; // Lima centro
     }, [puntos, userPosition]);
 
-    const [map, setMap] = useState<L.Map | null>(null);
+    const mapRef = useRef<L.Map | null>(null);
 
     useEffect(() => {
-        if (!map) return;
-        map.setView(center, map.getZoom());
-    }, [center, map]);
+        const current = mapRef.current;
+        if (!current) return;
+        current.setView(center, current.getZoom());
+    }, [center]);
 
     if (!puntos.length) return null;
 
@@ -96,7 +97,7 @@ export default function MapaComplejos({
                 style={{ height: "100%", width: "100%", zIndex: 0 }}
                 scrollWheelZoom={true}
                 zoomControl={true}
-                whenCreated={setMap}
+                ref={mapRef}
             >
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
