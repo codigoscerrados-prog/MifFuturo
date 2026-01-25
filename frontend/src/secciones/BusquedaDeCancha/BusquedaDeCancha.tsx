@@ -581,7 +581,9 @@ export default function BusquedaDeCancha({
     const totalResultados = complejosFiltrados.length;
 
     // ✅ paginación por complejos (6 cards)
+    const PAGE_WINDOW_SIZE = 5;
     const [paginaActual, setPagina] = useState(1);
+    const [pageWindowStart, setPageWindowStart] = useState(1);
     const [accionAplicada, setAccionAplicada] = useState<string | null>(null);
 
     // reset cuando cambian filtros
@@ -614,6 +616,35 @@ export default function BusquedaDeCancha({
         const start = (paginaActual - 1) * POR_PAGINA;
         return complejosFiltrados.slice(start, start + POR_PAGINA);
     }, [complejosFiltrados, paginaActual]);
+
+    useEffect(() => {
+        if (totalPaginas < pageWindowStart) {
+            setPageWindowStart(1);
+        } else if (totalPaginas - pageWindowStart < PAGE_WINDOW_SIZE - 1) {
+            const maxStart = Math.max(1, totalPaginas - PAGE_WINDOW_SIZE + 1);
+            setPageWindowStart(maxStart);
+        }
+    }, [totalPaginas, pageWindowStart]);
+
+    function goToPage(page: number, forcedStart?: number) {
+        const bounded = Math.min(Math.max(1, page), totalPaginas);
+        setPagina(bounded);
+        if (typeof forcedStart === "number") {
+            setPageWindowStart(forcedStart);
+            return;
+        }
+        if (bounded < pageWindowStart) {
+            setPageWindowStart(Math.max(1, bounded));
+        } else if (bounded > pageWindowStart + PAGE_WINDOW_SIZE - 1) {
+            setPageWindowStart(Math.min(bounded - PAGE_WINDOW_SIZE + 1, Math.max(1, totalPaginas - PAGE_WINDOW_SIZE + 1)));
+        }
+    }
+
+    function shiftWindow(delta: number) {
+        const maxStart = Math.max(1, totalPaginas - PAGE_WINDOW_SIZE + 1);
+        const nextStart = Math.min(Math.max(1, pageWindowStart + delta), maxStart);
+        goToPage(nextStart, nextStart);
+    }
 
     // ✅ mostrar mapa solo en desktop y si hay coords
     const mostrarMapa = useMemo(() => {
@@ -721,33 +752,33 @@ export default function BusquedaDeCancha({
                 <div className={`d-flex flex-column gap-2 mt-3 ${styles.paginacion}`}>
                     <div className={`d-flex align-items-center justify-content-between flex-wrap gap-2 ${styles.paginacionBotones}`}>
                         <div className={styles.paginacionInfo}>
-                            PÇ­gina <strong>{paginaActual}</strong> de <strong>{totalPaginas}</strong>
+                            Página <strong>{paginaActual}</strong> de <strong>{totalPaginas}</strong>
                         </div>
 
-                        <div className="d-flex align-items-center gap-2 flex-wrap">
-                            <button
+                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <button
                                 type="button"
                                 className={`btn btn-outline-secondary btn-sm rounded-pill ${styles.pagBtn}`}
-                                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                                onClick={() => goToPage(paginaActual - 1)}
                                 disabled={paginaActual === 1}
-                            >
-                                ƒÅ? Anterior
+                                >
+                                ← Anterior
                             </button>
 
                             <button
                                 type="button"
                                 className={`btn btn-outline-secondary btn-sm rounded-pill ${styles.pagBtn}`}
-                                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                                onClick={() => goToPage(paginaActual + 1)}
                                 disabled={paginaActual === totalPaginas}
                             >
-                                Siguiente ƒÅ'
+                                Siguiente →
                             </button>
                         </div>
                     </div>
 
                     <div className={`d-flex flex-wrap gap-2 ${styles.pagNumeros}`} aria-label="PÇ­ginas">
-                        {Array.from({ length: totalPaginas }).map((_, i) => {
-                            const n = i + 1;
+                        {Array.from({ length: Math.min(PAGE_WINDOW_SIZE, totalPaginas - pageWindowStart + 1) }).map((_, idx) => {
+                            const n = pageWindowStart + idx;
                             const activo = n === paginaActual;
                             return (
                                 <button
@@ -756,13 +787,22 @@ export default function BusquedaDeCancha({
                                     className={`btn btn-sm rounded-pill ${activo ? "btn-primary" : "btn-light"} ${styles.pagNum} ${
                                         activo ? styles.pagNumActivo : ""
                                     }`}
-                                    onClick={() => setPagina(n)}
+                                    onClick={() => goToPage(n)}
                                     aria-current={activo ? "page" : undefined}
                                 >
                                     {n}
                                 </button>
                             );
                         })}
+                        {totalPaginas > pageWindowStart + PAGE_WINDOW_SIZE - 1 && (
+                            <button
+                                type="button"
+                                className={`btn btn-sm rounded-pill btn-light ${styles.pagBtn}`}
+                                onClick={() => shiftWindow(PAGE_WINDOW_SIZE)}
+                            >
+                                →{" "}
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
