@@ -1,5 +1,7 @@
 "use client";
 
+import type { Metadata } from "next";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -7,6 +9,7 @@ import { useParams } from "next/navigation";
 import styles from "./page.module.css";
 import { apiFetch, mediaUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { buildPageMetadata, SEO_DOMAIN } from "@/lib/seo";
 
 const MapaComplejos = dynamic(() => import("@/secciones/BusquedaDeCancha/MapaComplejos"), { ssr: false }) as any;
 
@@ -67,6 +70,44 @@ function publicImgUrl(url?: string | null) {
         return mediaUrl(normalized, normalized, { forceProxy: true }) || normalized;
     }
     return normalized;
+}
+
+export async function generateMetadata({
+    params,
+}: {
+    params: { slug?: string | string[] };
+}): Promise<Metadata> {
+    const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
+    if (!slug) {
+        return buildPageMetadata({
+            title: "LateralVerde | Complejo deportivo",
+            description: "Reserva canchas sintéticas en Perú con LateralVerde.",
+            path: "/",
+        });
+    }
+
+    try {
+        const data = await apiFetch<ComplejoPerfil>(`/public/complejos/${slug}`);
+        const zona = [data.distrito, data.provincia, data.departamento].filter(Boolean).join(", ");
+        const locationText = zona || "Perú";
+        const title = `${data.nombre} en ${locationText} | Reservar cancha`;
+        const baseDescription = data.descripcion
+            ? `${data.descripcion} Reserva canchas sintéticas y confirma tu turno en LateralVerde.`
+            : `Reserva una cancha en ${data.nombre} (${locationText}) a través de LateralVerde.`;
+        const image = publicImgUrl(data.foto_url || data.imagenes?.[0]?.url) || undefined;
+        return buildPageMetadata({
+            title,
+            description: baseDescription,
+            path: `/${slug}`,
+            image,
+        });
+    } catch {
+        return buildPageMetadata({
+            title: "LateralVerde | Complejo deportivo",
+            description: "Reserva canchas sintéticas en Perú con LateralVerde.",
+            path: `/${slug}`,
+        });
+    }
 }
 
 function normalizarTelefono(raw: string | null | undefined) {
@@ -200,11 +241,67 @@ export default function ComplejoPublicoPage() {
         return [data.distrito, data.provincia, data.departamento].filter(Boolean).join(", ");
     }, [data]);
 
-    const precioStats = useMemo(() => {
-        if (!data || !data.canchas || data.canchas.length === 0) return { min: 0, max: 0 };
-        const precios = data.canchas.map((c) => Number(c.precio_hora || 0));
-        return { min: Math.min(...precios), max: Math.max(...precios) };
-    }, [data]);
+const precioStats = useMemo(() => {
+    if (!data || !data.canchas || data.canchas.length === 0) return { min: 0, max: 0 };
+    const precios = data.canchas.map((c) => Number(c.precio_hora || 0));
+    return { min: Math.min(...precios), max: Math.max(...precios) };
+}, [data]);
+
+const structuredData = useMemo(() => {
+    if (!data) return null;
+    const phoneRaw = normalizarTelefono(data.owner_phone);
+    const phone = phoneRaw ? (phoneRaw.startsWith("+") ? phoneRaw : `+${phoneRaw}`) : undefined;
+    const zone = [data.distrito, data.provincia, data.departamento].filter(Boolean).join(", ");
+    const schema: Record<string, unknown> = {
+        "@context": "https://schema.org",
+        "@type": "SportsActivityLocation",
+        name: data.nombre,
+        url: slug ? `${SEO_DOMAIN}/${slug}` : SEO_DOMAIN,
+        description: data.descripcion || `Reserva una cancha en ${data.nombre}.`,
+        image: publicImgUrl(data.foto_url || data.imagenes?.[0]?.url) || `${SEO_DOMAIN}/og-default.png`,
+        address: {
+            "@type": "PostalAddress",
+            streetAddress: data.direccion || "",
+            addressLocality: data.distrito || "",
+            addressRegion: data.provincia || "",
+            addressCountry: "Perú",
+        },
+    };
+    if (phone) schema.telephone = phone;
+    if (data.latitud != null && data.longitud != null) {
+        schema.geo = {
+            "@type": "GeoCoordinates",
+            latitude: data.latitud,
+            longitude: data.longitud,
+        };
+        schema.hasMap = `https://www.google.com/maps/search/?api=1&query=${data.latitud},${data.longitud}`;
+    }
+    const breadcrumb = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+            {
+                "@type": "ListItem",
+                position: 1,
+                name: "Inicio",
+                item: SEO_DOMAIN,
+            },
+            {
+                "@type": "ListItem",
+                position: 2,
+                name: "Buscar canchas",
+                item: `${SEO_DOMAIN}/buscar`,
+            },
+            {
+                "@type": "ListItem",
+                position: 3,
+                name: data.nombre,
+                item: slug ? `${SEO_DOMAIN}/${slug}` : SEO_DOMAIN,
+            },
+        ],
+    };
+    return JSON.stringify([schema, breadcrumb]);
+}, [data, slug]);
 
     async function handleShare() {
         if (!data) return;
@@ -306,6 +403,9 @@ export default function ComplejoPublicoPage() {
 
     return (
         <div className={styles.page}>
+            {structuredData ? (
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
+            ) : null}
             <div className={styles.container}>
                 <header className={styles.header}>
                     <div>

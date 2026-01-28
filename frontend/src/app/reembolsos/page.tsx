@@ -1,4 +1,5 @@
 ﻿import LegalPage, { LegalSection } from "@/componentes/LegalPage/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
 const sections: LegalSection[] = [
   {
@@ -67,10 +68,11 @@ const sections: LegalSection[] = [
   },
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Lateralverde | Política de Reembolsos",
-  description: "Condiciones bajo las cuales Lateralverde evalúa reembolsos.",
-};
+  description: "Conoce los pasos para solicitar reembolsos por pagos en la plataforma y cómo gestionamos cada caso.",
+  path: "/reembolsos",
+});
 
 export default function PageReembolsos() {
   return (

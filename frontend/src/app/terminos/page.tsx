@@ -1,4 +1,5 @@
 ﻿import LegalPage, { LegalSection } from "@/componentes/LegalPage/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
 const sections: LegalSection[] = [
   {
@@ -168,10 +169,11 @@ const sections: LegalSection[] = [
   },
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Lateralverde | Términos y Condiciones",
-  description: "Términos y condiciones del servicio Lateralverde.",
-};
+  description: "Consulta las condiciones que regulan el uso de LateralVerde y la intermediación con complejos deportivos.",
+  path: "/terminos",
+});
 
 export default function PageTerminos() {
   return (

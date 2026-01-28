@@ -3,6 +3,13 @@
 import { useRouter } from "next/navigation";
 import SeccionHero from "@/secciones/SeccionHero/SeccionHero";
 import type { FiltrosBusqueda } from "@/secciones/BusquedaDeCancha/BusquedaDeCancha";
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata = buildPageMetadata({
+    title: "LateralVerde | Busca y reserva canchas sintéticas",
+    description:
+        "Encuentra canchas sintéticas en Lima, Arequipa y todo Perú. Compara horarios, precios y confirma tu reserva en LateralVerde.",
+});
 
 //import SeccionBeneficios from "@/secciones/SeccionConfianza/SeccionConfianza";
 //import SeccionDestacadas from "@/secciones/SeccionDestacadas/SeccionDestacadas";

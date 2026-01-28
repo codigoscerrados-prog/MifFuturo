@@ -1,4 +1,5 @@
 ﻿import LegalPage, { LegalSection } from "@/componentes/LegalPage/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
 const sections: LegalSection[] = [
   {
@@ -50,10 +51,11 @@ const sections: LegalSection[] = [
   },
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Lateralverde | Aviso de Responsabilidad",
-  description: "Descubre las limitaciones de responsabilidad de Lateralverde frente a complejos y terceros.",
-};
+  description: "Explicamos qué garantías ofrecemos al buscar y reservar canchas: disponibilidad, terceros y cambios imprevistos.",
+  path: "/aviso-responsabilidad",
+});
 
 export default function PageAvisoResponsabilidad() {
   return (

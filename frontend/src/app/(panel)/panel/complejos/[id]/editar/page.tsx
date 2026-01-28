@@ -6,6 +6,13 @@ import styles from "./page.module.css";
 import { apiFetch, mediaUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
+export const metadata = {
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
+
 type ComplejoForm = {
     id: number;
     nombre: string;

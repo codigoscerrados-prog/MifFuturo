@@ -1,4 +1,5 @@
 ﻿import LegalPage, { LegalSection } from "@/componentes/LegalPage/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
 const sections: LegalSection[] = [
   {
@@ -116,10 +117,11 @@ const sections: LegalSection[] = [
   },
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Lateralverde | Política de Privacidad",
-  description: "Cómo tratamos tus datos personales en Lateralverde.",
-};
+  description: "Conoce cómo tratamos tus datos personales, los derechos que puedes ejercer y cómo asegurar tu privacidad en Perú.",
+  path: "/privacidad",
+});
 
 export default function PagePrivacidad() {
   return (

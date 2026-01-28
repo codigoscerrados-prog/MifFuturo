@@ -1,4 +1,5 @@
 ﻿import LegalPage, { LegalSection } from "@/componentes/LegalPage/LegalPage";
+import { buildPageMetadata } from "@/lib/seo";
 
 const sections: LegalSection[] = [
   {
@@ -49,10 +50,11 @@ const sections: LegalSection[] = [
   },
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Lateralverde | Política de Cookies",
-  description: "Cómo usamos y gestionamos las cookies en Lateralverde.",
-};
+  description: "Entiende qué cookies usamos (esenciales, analítica y marketing) y cómo configuras tu consentimiento en LateralVerde.",
+  path: "/cookies",
+});
 
 export default function PageCookies() {
   return (
