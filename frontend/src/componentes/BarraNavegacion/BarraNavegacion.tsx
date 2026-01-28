@@ -138,7 +138,7 @@ export default function BarraNavegacion() {
         >
             <div className={`contenedor container-xl px-3 ${styles.contenido}`}>
                 <Link
-                    href="/"
+v                    href="/"
                     className={`${styles.logo} navbar-brand d-inline-flex align-items-center text-decoration-none`}
                     aria-label="Ir al inicio"
                 >
