@@ -146,8 +146,8 @@ export default function BarraNavegacion() {
                         <Image
                             src="/logo_principal.svg"
                             alt="Lateralverde"
-                            width={140}
-                            height={56}
+                            width={340}
+                            height={136}
                             className={styles.logoImage}
                             priority
                         />
