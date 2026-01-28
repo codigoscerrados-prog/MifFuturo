@@ -8,7 +8,7 @@
 .banner {
   position: relative;
   width: 100%;
-  border-radius: 32px;
+  border-radius: 0;
   overflow: hidden;
   background-image: url("/canchas/sintetico-marconi.avif");
   background-size: cover;
@@ -21,13 +21,7 @@
 
 .capa {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 50%;
-  width: min(1140px, 100%);
-  max-width: 1140px;
-  transform: translateX(-50%);
+  inset: 0;
   background:
     linear-gradient(120deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.58) 60%, rgba(15, 23, 42, 0.32)),
     radial-gradient(680px 420px at 15% 20%, rgba(37, 99, 235, 0.22), transparent 60%);
