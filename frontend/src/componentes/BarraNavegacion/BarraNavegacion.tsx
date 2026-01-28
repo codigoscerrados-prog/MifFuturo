@@ -139,10 +139,10 @@ export default function BarraNavegacion() {
             <div className={`contenedor container-xl px-3 ${styles.contenido}`}>
                 <Link
                     href="/"
-                    className={`${styles.logo} navbar-brand d-inline-flex align-items-center gap-2 text-decoration-none`}
+                    className={`${styles.logo} navbar-brand d-inline-flex align-items-center text-decoration-none`}
                     aria-label="Ir al inicio"
                 >
-                    <span className={styles.logoIcon} aria-hidden="true">
+                    <span className={styles.logoIcon}>
                         <Image
                             src="/logo_principal.svg"
                             alt="Lateralverde"
@@ -152,9 +152,7 @@ export default function BarraNavegacion() {
                             priority
                         />
                     </span>
-                    <span className={styles.logoText}>
-                        Lateral<span className={styles.logoTextAccent}>verde</span>
-                    </span>
+                    <span className={styles.srOnly}>Lateralverde</span>
                 </Link>
 
                 
@@ -231,7 +229,7 @@ export default function BarraNavegacion() {
             <div className={`${styles.movil} ${menuOpen ? styles.movilOn : ""} shadow-lg`} role="dialog" aria-modal="true">
                 <div className={styles.movilHeader}>
                     <div className={styles.movilBrand}>
-                        <span className={styles.logoIcon} aria-hidden="true">
+                        <span className={styles.logoIcon}>
                             <Image
                                 src="/logo_principal.svg"
                                 alt="Lateralverde"
@@ -241,9 +239,7 @@ export default function BarraNavegacion() {
                                 priority
                             />
                         </span>
-                        <span className={styles.logoText}>
-                            Lateral<span className={styles.logoTextAccent}>verde</span>
-                        </span>
+                        <span className={styles.srOnly}>Lateralverde</span>
                     </div>
 
                     <button type="button" className={styles.movilClose} onClick={() => setMenuOpen(false)} aria-label="Cerrar menú">
