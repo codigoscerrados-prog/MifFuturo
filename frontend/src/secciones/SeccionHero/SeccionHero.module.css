@@ -203,11 +203,24 @@
 
 @media (min-width: 1024px) {
     .bannerContenido {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        align-items: center;
+    }
+
+    .texto {
+        grid-column: 1;
+    }
+
+    .ctaGroup {
+        grid-column: 1;
+        margin-top: 16px;
+        justify-content: flex-start;
     }
 
     .buscadorWrap {
+        grid-column: 2;
         justify-self: end;
+        width: 100%;
     }
 }
 
