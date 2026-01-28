@@ -2,7 +2,7 @@ import SeccionRegistrarse from "@/secciones/SeccionRegistrarse/SeccionRegistrars
 
 export default function PageRegistrarPropietario() {
     return (
-        <main className="fondoSeccion fondoA espaciadoSeccion" style={{ marginTop: "65px" }}>
+        <main className="fondoSeccion fondoA espaciadoSeccion">
             <SeccionRegistrarse
                 defaultRole="propietario"
                 mostrarRoles={false}

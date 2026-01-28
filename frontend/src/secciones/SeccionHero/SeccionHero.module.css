@@ -136,6 +136,26 @@
     text-decoration: none;
 }
 
+@media (max-width: 768px) {
+    .bannerContenido {
+        grid-template-columns: 1fr;
+    }
+
+    .buscadorWrap {
+        grid-column: 1;
+    }
+
+    .ctaGroup {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ctaBtn {
+        width: 100%;
+        text-decoration: none;
+    }
+}
+
 .ctaPrimary {
     background: var(--page-button);
     color: #fff;
