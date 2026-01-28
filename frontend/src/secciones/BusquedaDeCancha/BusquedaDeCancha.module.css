@@ -463,6 +463,15 @@
     box-shadow: var(--pc-shadow-xs);
 }
 
+:global(.btn-outline-secondary),
+/* pagination controls */
+:global(.BusquedaDeCancha-module__p5KmXa__pagBtn),
+:global(.BusquedaDeCancha-module__p5KmXa__pagNum),
+.btnDetalleGlobal,
+.btnSmGlobal {
+    color: #fff;
+}
+
 /* ---------- Modal (detalle + reserva) ---------- */
 .modalOverlay {
     position: fixed;

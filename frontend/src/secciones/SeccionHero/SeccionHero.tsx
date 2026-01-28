@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./SeccionHero.module.css";
 import BuscadorCanchas from "@/secciones/BusquedaDeCancha/BuscadorCanchas";
 import type { FiltrosBusqueda } from "@/secciones/BusquedaDeCancha/BusquedaDeCancha";
@@ -14,9 +15,9 @@ const FILTROS_BASE: FiltrosBusqueda = {
 };
 
 const BANNER = {
-    badge: "Reserva simple - filtros claros - confirmacion rapida",
-    titulo: "Encuentra tu cancha",
-    subtitulo: "Filtra por departamento, provincia, distrito, tipo y precio. Resultados en segundos.",
+    badge: "Más reservas, menos mensajes perdidos",
+    titulo: "LateralVerde lleva tu cancha a más jugadores",
+    subtitulo: "Publica tu complejo, muestra tu disponibilidad y confirma reservas más rápido.",
     imagen: "/banner.avif",
 };
 
@@ -52,6 +53,23 @@ export default function SeccionHero({
                         </h1>
 
                         <p className={styles.descripcion}>{banner.subtitulo}</p>
+                    </div>
+
+                    <div className={styles.ctaGroup}>
+                        <Link
+                            href="/registrarse/propietario"
+                            className={`${styles.ctaBtn} ${styles.ctaPrimary}`}
+                            aria-label="Unir mi cancha a LateralVerde"
+                        >
+                            Unir mi cancha a LateralVerde (Es Gratis)
+                        </Link>
+                        <Link
+                            href="/#como-funciona"
+                            className={`${styles.ctaBtn} ${styles.ctaSecondary}`}
+                            aria-label="Ver cómo funciona"
+                        >
+                            Ver cómo funciona
+                        </Link>
                     </div>
 
                     {mostrarBuscador && onBuscar && (
