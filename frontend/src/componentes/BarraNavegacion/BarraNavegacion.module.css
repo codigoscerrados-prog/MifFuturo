@@ -93,14 +93,19 @@
 }
 
 .logoIcon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(99, 102, 241, 0.14));
   border: 1px solid rgba(37, 99, 235, 0.16);
   box-shadow: 0 10px 24px -18px rgba(2, 6, 23, 0.28);
+}
+
+.logoImage {
+  width: 80%;
+  height: 80%;
 }
 
 .logoImage {
