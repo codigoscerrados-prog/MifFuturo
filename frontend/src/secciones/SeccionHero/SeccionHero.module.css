@@ -108,6 +108,7 @@
     flex-wrap: wrap;
     align-items: center;
     margin-top: 8px;
+    grid-column: 1 / -1;
 }
 
 .ctaBtn {
@@ -125,9 +126,9 @@
 }
 
 .ctaPrimary {
-    background: linear-gradient(135deg, #064e3b, #0f766e);
+    background: var(--page-button);
     color: #fff;
-    border: 1px solid transparent;
+    border: 1px solid var(--page-button-outline);
 }
 
 .ctaPrimary:hover,
@@ -138,7 +139,7 @@
 
 .ctaSecondary {
     border: 1px solid rgba(255, 255, 255, 0.8);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
 }
 
