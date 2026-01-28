@@ -134,8 +134,9 @@
 }
 
 .btnSec {
-    border-color: var(--borde);
-    background: var(--blanco);
+    border-color: var(--page-button-outline);
+    background: var(--page-button);
+    color: #fff;
 }
 
 @media (max-width: 720px) {
