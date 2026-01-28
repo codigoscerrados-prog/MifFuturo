@@ -45,31 +45,33 @@ export default function SeccionHero({
                 <div className={styles.capa} />
 
                 <div className={styles.bannerContenido}>
-                    <div className={styles.texto}>
-                        <p className={styles.badge}>{banner.badge}</p>
+                    <div className={styles.heroContent}>
+                        <div className={styles.texto}>
+                            <p className={styles.badge}>{banner.badge}</p>
 
-                        <h1 className={styles.titulo}>
-                            {banner.titulo} <span className={styles.degradado}>en segundos</span>
-                        </h1>
+                            <h1 className={styles.titulo}>
+                                {banner.titulo} <span className={styles.degradado}>en segundos</span>
+                            </h1>
 
-                        <p className={styles.descripcion}>{banner.subtitulo}</p>
-                    </div>
+                            <p className={styles.descripcion}>{banner.subtitulo}</p>
+                        </div>
 
-                    <div className={styles.ctaGroup}>
-                        <Link
-                            href="/registrarse/propietario"
-                            className={`${styles.ctaBtn} ${styles.ctaPrimary}`}
-                            aria-label="Unir mi cancha a LateralVerde"
-                        >
-                            Unir mi cancha a LateralVerde (Es Gratis)
-                        </Link>
-                        <Link
-                            href="/#como-funciona"
-                            className={`${styles.ctaBtn} ${styles.ctaSecondary}`}
-                            aria-label="Ver cómo funciona"
-                        >
-                            Ver cómo funciona
-                        </Link>
+                        <div className={styles.ctaGroup}>
+                            <Link
+                                href="/registrarse/propietario"
+                                className={`${styles.ctaBtn} ${styles.ctaPrimary}`}
+                                aria-label="Unir mi cancha a LateralVerde"
+                            >
+                                Unir mi cancha a LateralVerde (Es Gratis)
+                            </Link>
+                            <Link
+                                href="/#como-funciona"
+                                className={`${styles.ctaBtn} ${styles.ctaSecondary}`}
+                                aria-label="Ver cómo funciona"
+                            >
+                                Ver cómo funciona
+                            </Link>
+                        </div>
                     </div>
 
                     {mostrarBuscador && onBuscar && (
