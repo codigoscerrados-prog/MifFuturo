@@ -20,7 +20,7 @@ const LINKS = {
   aviso: "/aviso-responsabilidad",
 };
 
-const SOPORTE_WA = "51999999999";
+const SOPORTE_WA = "51922023667";
 const SOPORTE_WA_TEXT = "Hola Lateralverde, necesito ayuda";
 const SOPORTE_EMAIL = "soporte@lateralverde.pe";
 const SOPORTE_WA_URL = `https://wa.me/${SOPORTE_WA}?text=${encodeURIComponent(SOPORTE_WA_TEXT)}`;
@@ -104,7 +104,7 @@ export default function PiePagina() {
 
       <div className={styles.bottom}>
         <div className="container-xl px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <div className={styles.copy}>{`© ${new Date().getFullYear()} Lateralverde. Todos los derechos reservados.`}</div>
+          <div className={styles.copy}>{`© ${new Date().getFullYear()} Lateral verde. Todos los derechos reservados.`}</div>
           <div className={styles.legal}>
             <Link className={styles.linkMini} href={LINKS.terminos}>Términos</Link>
             <Link className={styles.linkMini} href={LINKS.privacidad}>Privacidad</Link>

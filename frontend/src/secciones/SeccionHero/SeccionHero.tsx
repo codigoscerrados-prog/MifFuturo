@@ -16,7 +16,7 @@ const FILTROS_BASE: FiltrosBusqueda = {
 
 const BANNER = {
     badge: "Más reservas, menos mensajes perdidos",
-    titulo: "LateralVerde lleva tu cancha a más jugadores",
+    titulo: "Lateral Verde lleva tu cancha a más jugadores",
     subtitulo: "Publica tu complejo, muestra tu disponibilidad y confirma reservas más rápido.",
     imagen: "/banner.avif",
 };
