@@ -16,7 +16,7 @@ const FILTROS_BASE: FiltrosBusqueda = {
 
 const BANNER = {
     badge: "Más reservas, menos mensajes perdidos",
-    titulo: "Lateral Verde lleva tu cancha a más jugadores",
+    titulo: "lleva tu cancha a más jugadores",
     subtitulo: "Publica tu complejo, muestra tu disponibilidad y confirma reservas más rápido.",
     imagen: "/banner.avif",
 };
@@ -50,7 +50,8 @@ export default function SeccionHero({
                             <p className={styles.badge}>{banner.badge}</p>
 
                             <h1 className={styles.titulo}>
-                                {banner.titulo} <span className={styles.degradado}>en segundos</span>
+                                <span className={styles.brandWord}>Lateral Verde</span> {banner.titulo}{" "}
+                                <span className={styles.degradado}>en segundos</span>
                             </h1>
 
                             <p className={styles.descripcion}>{banner.subtitulo}</p>
