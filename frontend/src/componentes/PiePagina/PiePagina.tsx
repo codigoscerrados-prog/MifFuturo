@@ -22,7 +22,7 @@ const LINKS = {
 
 const SOPORTE_WA = "51922023667";
 const SOPORTE_WA_TEXT = "Hola Lateralverde, necesito ayuda";
-const SOPORTE_EMAIL = "soporte@lateralverde.pe";
+const SOPORTE_EMAIL = "soporte@lateralverde.com";
 const SOPORTE_WA_URL = `https://wa.me/${SOPORTE_WA}?text=${encodeURIComponent(SOPORTE_WA_TEXT)}`;
 
 export default function PiePagina() {
@@ -43,7 +43,7 @@ export default function PiePagina() {
               <div className={styles.logo}>
                 <BrandLogo variant="full" size="sm" href="/" />
               </div>
-              <p className={styles.texto}>Reserva canchas, gestiona horarios y conecta con clubes en un solo lugar.</p>
+              <p className={styles.texto}>Reserva canchas, gestiona horarios y conecta con los propietarios en un solo lugar.</p>
               <p className={styles.soporte}>Soporte: Lun-Dom | 8am-10pm</p>
               <div className={styles.contactos}>
                 <a className={styles.linkIcon} href={SOPORTE_WA_URL} aria-label="WhatsApp soporte">

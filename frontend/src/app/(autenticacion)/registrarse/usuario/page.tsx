@@ -2,14 +2,16 @@ import SeccionRegistrarse from "@/secciones/SeccionRegistrarse/SeccionRegistrars
 
 export default function PageRegistrarUsuario() {
     return (
-        <main className="fondoSeccion fondoA espaciadoSeccion">
-            <SeccionRegistrarse
-                defaultRole="usuario"
-                mostrarRoles={false}
-                badge="Registro de usuario"
-                titulo="Crear cuenta de usuario"
-                subtitulo="Regístrate para reservar canchas en minutos."
-            />
+        <main className="paginaBannerRegistro">
+            <div className="fondoSeccion fondoA espaciadoSeccion">
+                <SeccionRegistrarse
+                    defaultRole="usuario"
+                    mostrarRoles={false}
+                    badge="Registro de usuario"
+                    titulo="Crear cuenta de usuario"
+                    subtitulo="Regístrate para reservar canchas en minutos."
+                />
+            </div>
         </main>
     );
 }

@@ -62,7 +62,7 @@ export default function SeccionHero({
                                 className={`${styles.ctaBtn} ${styles.ctaPrimary}`}
                                 aria-label="Unir mi cancha a LateralVerde"
                             >
-                                Unir mi cancha a LateralVerde (Es Gratis)
+                                Unir mi cancha a Lateral Verde (Es Gratis)
                             </Link>
                             <Link
                                 href="/#como-funciona"

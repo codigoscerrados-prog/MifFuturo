@@ -112,14 +112,24 @@
 
 @media (max-width: 768px) {
   .contenido {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    justify-items: stretch;
+    align-items: center;
+    gap: 8px;
   }
 
   .logo {
-    justify-content: center;
-    width: 100%;
+    justify-content: flex-start;
+    width: auto;
+    justify-self: start;
+  }
+
+  .brand {
+    justify-self: start;
+  }
+
+  .botonMenu {
+    justify-self: end;
   }
 
   .logoIcon {
@@ -359,21 +369,21 @@
   align-items: center;
   justify-content: center;
   justify-self: end;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 10px 26px -22px rgba(2, 6, 23, 0.22);
+  border: 1px solid rgba(2, 51, 14, 0.35);
+  background: rgba(2, 51, 14, 0.12);
+  box-shadow: 0 10px 26px -22px rgba(2, 51, 14, 0.32);
   transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .botonMenu:hover {
   transform: translateY(-1px);
-  background: rgba(37, 99, 235, 0.10);
-  box-shadow: 0 16px 38px -30px rgba(2, 6, 23, 0.28);
+  background: rgba(2, 51, 14, 0.2);
+  box-shadow: 0 16px 38px -30px rgba(2, 51, 14, 0.4);
 }
 
 .botonMenu:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18), 0 16px 38px -30px rgba(2, 6, 23, 0.28);
+  box-shadow: 0 0 0 4px rgba(2, 51, 14, 0.3), 0 16px 38px -30px rgba(2, 51, 14, 0.4);
 }
 
 /* Hamburger */
@@ -389,13 +399,13 @@
   height: 2px;
   width: 100%;
   border-radius: 999px;
-  background: rgba(11, 22, 48, 0.78);
+  background: #02330e;
   transition: transform 180ms ease, opacity 180ms ease;
 }
 
 @media (prefers-color-scheme: dark) {
   .hamburgerLine {
-    background: rgba(241, 245, 249, 0.78);
+    background: #c8f5c8;
   }
 }
 
@@ -549,6 +559,7 @@
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.55);
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, color 160ms ease;
+  text-decoration: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -562,6 +573,19 @@
 .movilLink:hover {
   transform: translateY(-1px);
   background: rgba(37, 99, 235, 0.10);
+}
+
+.movilLink:focus-visible {
+  outline: none;
+}
+
+.movilNav,
+.movilAcciones {
+  text-decoration: none;
+}
+
+.movilAcciones .boton {
+  text-decoration: none;
 }
 
 .movilLink:focus-visible {
