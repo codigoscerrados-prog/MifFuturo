@@ -290,18 +290,25 @@
   text-transform: uppercase;
   text-decoration: none;
   position: relative;
-  color: var(--nav-text);
-  transition: transform 160ms ease, color 160ms ease;
+  color: #fff;
+  font-family: "Montserrat", "Inter", var(--font-sans);
+  transition: transform 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 .acciones .btnAction {
-  color: var(--azulAcento);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
 }
 
 .acciones .btnGhost:hover,
 .acciones .btnAction:hover {
   transform: translateY(-1px);
-  color: var(--azulAcento);
+  color: #fff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
 }
 
 .btnDanger {
