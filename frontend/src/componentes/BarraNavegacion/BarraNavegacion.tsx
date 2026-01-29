@@ -8,6 +8,7 @@ import styles from "./BarraNavegacion.module.css";
 import BrandLogo from "@/components/BrandLogo";
 import { AUTH_CHANGED_EVENT, clearToken, getRoleFromToken, getToken, rutaPorRole } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import { AUTH_PAGE_BODY_CLASS, NAV_BODY_CLASS } from "@/lib/ui";
 
 type PerfilMe = {
     first_name?: string | null;
@@ -27,7 +28,8 @@ function IconoCerrar({ className = "" }: { className?: string }) {
 export default function BarraNavegacion() {
     const router = useRouter();
     const pathname = usePathname();
-    const hideNav = pathname?.startsWith("/panel");
+    const hideNav =
+        pathname?.startsWith("/panel") || pathname?.startsWith("/autenticacion");
 
     const [token, setToken] = useState<string | null>(null);
     const [nombreUsuario, setNombreUsuario] = useState<string | null>(null);
@@ -94,6 +96,20 @@ export default function BarraNavegacion() {
             document.body.style.overflow = "";
         };
     }, [menuOpen, hideNav]);
+
+    useEffect(() => {
+        if (typeof document === "undefined") return;
+        const body = document.body;
+        if (hideNav) {
+            body.classList.remove(NAV_BODY_CLASS);
+            return;
+        }
+        body.classList.remove(AUTH_PAGE_BODY_CLASS);
+        body.classList.add(NAV_BODY_CLASS);
+        return () => {
+            body.classList.remove(NAV_BODY_CLASS);
+        };
+    }, [hideNav]);
 
     useEffect(() => {
         if (hideNav) return;

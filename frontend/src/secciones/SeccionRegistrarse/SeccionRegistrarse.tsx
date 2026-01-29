@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import GoogleMark from "@/components/GoogleMark";
 
 import styles from "./SeccionRegistrarse.module.css";
 import { apiFetch, apiUrl } from "@/lib/api";
 import { getRoleFromToken, rutaPorRole, setToken } from "@/lib/auth";
+import { AUTH_PAGE_BODY_CLASS } from "@/lib/ui";
 
 type RegisterBody = {
     first_name: string;
@@ -59,6 +61,14 @@ export default function SeccionRegistrarse({
     useEffect(() => {
         if (defaultRole) setRole(defaultRole);
     }, [defaultRole]);
+
+    useEffect(() => {
+        if (typeof document === "undefined") return;
+        document.body.classList.add(AUTH_PAGE_BODY_CLASS);
+        return () => {
+            document.body.classList.remove(AUTH_PAGE_BODY_CLASS);
+        };
+    }, []);
 
     const puede = useMemo(() => {
         if (!first_name.trim() || !last_name.trim()) return false;
@@ -200,24 +210,7 @@ export default function SeccionRegistrarse({
                                 }
                             >
                                 <span className={styles.googleIcon} aria-hidden="true">
-                                    <svg viewBox="0 0 48 48" role="presentation" focusable="false">
-                                        <path
-                                            fill="#EA4335"
-                                            d="M24 9.5c3.54 0 6.64 1.22 9.11 3.6l6.8-6.8C35.87 2.5 30.31 0 24 0 14.62 0 6.51 5.38 2.55 13.22l7.9 6.13C12.24 13.02 17.67 9.5 24 9.5z"
-                                        />
-                                        <path
-                                            fill="#34A853"
-                                            d="M46.5 24.5c0-1.6-.15-3.14-.43-4.63H24v9.26h12.6c-.54 2.94-2.22 5.42-4.72 7.08l7.26 5.63C43.45 37.94 46.5 31.76 46.5 24.5z"
-                                        />
-                                        <path
-                                            fill="#4A90E2"
-                                            d="M10.45 28.65a14.9 14.9 0 0 1 0-9.3l-7.9-6.13A24 24 0 0 0 0 24c0 3.87.93 7.52 2.55 10.78l7.9-6.13z"
-                                        />
-                                        <path
-                                            fill="#FBBC05"
-                                            d="M24 48c6.31 0 11.61-2.08 15.48-5.66l-7.26-5.63c-2.02 1.36-4.6 2.17-8.22 2.17-6.33 0-11.76-3.52-13.55-8.35l-7.9 6.13C6.51 42.62 14.62 48 24 48z"
-                                        />
-                                    </svg>
+                                    <GoogleMark width={18} height={18} aria-hidden="true" />
                                 </span>
                                 Continuar con Google
                             </button>

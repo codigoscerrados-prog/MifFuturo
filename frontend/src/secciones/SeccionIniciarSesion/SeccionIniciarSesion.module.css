@@ -5,6 +5,10 @@
   --muted-soft: rgba(148, 163, 184, 0.85);
 }
 
+:global(body.lv-auth-page) {
+  background: #0b1220;
+}
+
 .seccion {
   min-height: 100vh;
   padding: clamp(28px, 3vw, 56px) 16px;
