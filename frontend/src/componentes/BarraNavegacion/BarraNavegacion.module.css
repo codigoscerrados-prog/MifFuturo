@@ -96,8 +96,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  --brand-logo-color: #02330e;
   color: var(--nav-text);
+  --brand-logo-color: #fff;
+}
+
+.header[data-scrolled="true"] .brand {
+  --brand-logo-color: var(--nav-text);
 }
 
 .logoIcon {
