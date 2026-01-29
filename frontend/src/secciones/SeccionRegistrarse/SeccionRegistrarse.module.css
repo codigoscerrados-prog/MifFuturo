@@ -5,11 +5,26 @@
     align-items: flex-start;
     justify-content: center;
     background: transparent;
+    position: relative;
 }
 
 .seccion::before,
 .seccion::after {
     display: none;
+}
+
+.seccion::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(900px 520px at 18% 12%, #fffffff0, #ffffff9e 56%, #ffffff57 100%), linear-gradient(#ffffffb8, #ffffff7a);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.seccion > .contenedor {
+    position: relative;
+    z-index: 1;
 }
 
 @keyframes scan {
