@@ -32,7 +32,6 @@
 
 .seccion {
   min-height: 100vh;
-  padding: clamp(28px, 3vw, 56px) 16px;
   display: flex;
   align-items: center;
   justify-content: center;
