@@ -234,9 +234,6 @@ export default function SeccionIniciarSesion() {
 
     return (
         <section className={styles.seccion}>
-            <div className={styles.brandHero}>
-                <BrandLogo href="/" variant="compact" size="lg" className={styles.brandHeroLogo} />
-            </div>
             <div className={styles.loginCard} data-loading={cargando ? "true" : "false"} data-error={error ? "true" : "false"}>
                 <div className={styles.cardGrid}>
                     {/* LADO IZQUIERDO */}
@@ -270,6 +267,9 @@ export default function SeccionIniciarSesion() {
 
                     {/* LADO DERECHO */}
                     <section className={styles.cardMain}>
+                        <div className={styles.brandHero}>
+                            <BrandLogo href="/" variant="compact" size="lg" className={styles.brandHeroLogo} />
+                        </div>
                         <form onSubmit={enviar}>
                             {/* Google primero */}
                             <div className={styles.socialButtons}>
