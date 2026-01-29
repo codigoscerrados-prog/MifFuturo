@@ -28,8 +28,9 @@ function IconoCerrar({ className = "" }: { className?: string }) {
 export default function BarraNavegacion() {
     const router = useRouter();
     const pathname = usePathname();
-    const hideNav =
-        pathname?.startsWith("/panel") || pathname?.startsWith("/autenticacion");
+    const authSegments = ["/autenticacion", "/registrarse", "/iniciar-sesion"];
+    const isAuthPath = pathname ? authSegments.some((segment) => pathname.startsWith(segment)) : false;
+    const hideNav = pathname?.startsWith("/panel") || isAuthPath;
 
     const [token, setToken] = useState<string | null>(null);
     const [nombreUsuario, setNombreUsuario] = useState<string | null>(null);
